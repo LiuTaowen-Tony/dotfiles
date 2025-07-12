@@ -166,6 +166,13 @@ defaults write NSGlobalDomain AppleLocale -string "en_US@currency=GBP"
 defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters"
 defaults write NSGlobalDomain AppleMetricUnits -bool true
 
+# Set Fn Key be Fn key
+# 0 for nothing, 1 for change input source, 2 for emoji, 3 for dictation
+defaults write com.apple.HIToolbox AppleFnUsageType -int "0"
+
+# F1, F2, etc. behave as standard function keys. Press the fn key to use the special features printed on the key.
+defaults write NSGlobalDomain com.apple.keyboard.fnState -bool true
+
 # Show language menu in the top right corner of the boot screen
 # sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool true
 
@@ -247,6 +254,9 @@ sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutio
 # Finder: allow quitting via ⌘ + Q; doing so will also hide desktop icons
 defaults write com.apple.finder QuitMenuItem -bool true
 
+# Empty bin items after 30 days
+defaults write com.apple.finder FXRemoveOldTrashItems -bool "true"
+
 # Finder: disable window animations and Get Info animations
 # defaults write com.apple.finder DisableAllAnimations -bool true
 
@@ -274,7 +284,7 @@ defaults write com.apple.finder ShowStatusBar -bool true
 defaults write com.apple.finder ShowPathbar -bool true
 
 # Display full POSIX path as Finder window title
-defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
+# defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
 
 # Keep folders on top when sorting by name
 defaults write com.apple.finder _FXSortFoldersFirst -bool true
@@ -368,11 +378,14 @@ defaults write com.apple.dock mouse-over-hilite-stack -bool true
 # Change minimize/maximize window effect
 # defaults write com.apple.dock mineffect -string "scale"
 
-# Minimize windows into their application’s icon
-defaults write com.apple.dock minimize-to-application -bool true
+# Don't minimize windows into their application’s icon
+defaults write com.apple.dock minimize-to-application -bool false
 
 # Enable spring loading for all Dock items
 defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
+
+# Scroll to Exposé app
+defaults write com.apple.dock "scroll-to-open" -bool "true"
 
 # Show indicator lights for open applications in the Dock
 defaults write com.apple.dock show-process-indicators -bool true
