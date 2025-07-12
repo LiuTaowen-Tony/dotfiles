@@ -11,9 +11,8 @@
 [core]
 	autocrlf = input
 [alias]
-  ini = !git init && git_gitignore
-  ignore = ! git_gitignore
-  expand = ! git_expand
+  ini = !git init && mk_gitignore
+  ignore = ! mk_gitignore
   sub = submodule
   st = status -s
   se = !git rev-list --all | xargs git grep -F

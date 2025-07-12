@@ -8,6 +8,7 @@ alias ....='cd ../../..'
 alias la='ls -a'
 alias ll='ls -lh'
 alias l='ls -lAh'
+alias rm='trash'
 
 # continue wget
 alias wget='wget -c'
@@ -15,6 +16,7 @@ alias df='df -H'
 alias du='du -ch'
 alias rsmv='rsync -avhP --remove-source-files'
 alias rscp='rsync -avhP'
+alias json='jq .'
 
 ## pass options to free ##
 alias meminfo='free -m -l -t'
@@ -32,7 +34,6 @@ alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en0"
 
 alias ghist="history | grep"
-alias vim='vim "+set mouse="'
 alias reload="exec ${SHELL} -l"
 alias path='echo -e ${PATH//:/\\n}'
 
@@ -50,4 +51,4 @@ alias gpu2='CUDA_VISIBLE_DEVICES=2'
 alias gpu3='CUDA_VISIBLE_DEVICES=3'
 
 alias sact='source .venv/bin/activate'
-
+alias vim='vim "+set mouse="'

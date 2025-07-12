@@ -9,16 +9,6 @@ if [[ $- == *i* ]] ; then
 
 export MAKE='make -j16'
 
-function proxy_on() {
-    export http_proxy=http://127.0.0.1:7897
-    export https_proxy="$http_proxy"
-    echo -e "enabled terminal proxy"
-}
-
-function proxy_off(){
-    unset http_proxy https_proxy
-    echo -e "disabled terminal proxy"
-}
 
 
 git_info() {
@@ -106,7 +96,6 @@ if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
   alias diff='diff --color=auto'
   alias ip='ip -color=auto'
   alias git='git -c color.ui=auto'
-  alias json='jq .'
   alias dir='dir --color=auto'
 fi
 source $HOME/dotfiles/aliases

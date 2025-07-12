@@ -2,10 +2,16 @@
 
 # spacevim
 ensure_spacevim () {
+  if [ -f "$HOME/.SpaceVim.d" ]; then
+    return
+  fi
   curl -sLf https://spacevim.org/install.sh | bash
 }
 
 ensure_asdf () {
+  if command -v asdf > /dev/null 2>&1; then
+    return
+  fi
   UNAME=$(uname -a)
   echo $UNAME
   OS=linux
@@ -40,6 +46,9 @@ ensure_zsh () {
 }
 
 ensure_x_cmd () {
+  if command -v x > /dev/null 2>&1; then
+    return
+  fi
   eval "$(curl https://get.x-cmd.com)"
 }
 
@@ -48,6 +57,6 @@ if [ $# != 1 ] ; then
   exit 1
 fi
 
-ensure_$1
+"ensure_$1"
 exit 0
 
