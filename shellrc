@@ -58,6 +58,7 @@ if [[ $current_shell == *"bash"* ]] ; then # BASH SPECIFIC
   fi
   PS1='\[\033[32m→\]\[\033[0m\] \[\033[32m\]\h \[\033[1;34m\]\W\[\033[0m\]$(git_info) '
 elif [[ $current_shell == *"zsh"* ]] ; then # ZSH SPECIFIC
+  setopt interactivecomments
   setopt CORRECT
   setopt CORRECT_ALL
   setopt NO_CASE_GLOB
