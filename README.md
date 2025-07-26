@@ -142,14 +142,15 @@ ensure asdf      # Install asdf version manager
 ensure x_cmd     # Install x-cmd toolkit
 ```
 
-#### `my_copilot.py` - AI Bash Translator
+#### `=` - AI Bash Translator
 Translates natural language to bash commands using AI:
 ```bash
-my_copilot "create a tar archive of project folder"
+= "create a tar archive of project folder"
 # Output: tar -czvf project.tar.gz project
 ```
 
 #### `trash` - Safe File Deletion
+this is aliased to rm
 ```bash
 trash file.txt        # Move to ~/.Trash instead of permanent deletion
 trash *.log          # Move multiple files safely
