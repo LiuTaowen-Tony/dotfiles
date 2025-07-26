@@ -28,7 +28,7 @@ class BashTranslator:
             {
                 "role": "system",
                 "content": "You are a helpful assistant that translates natural language instructions into bash scripts. Include bash command only"
-            },
+
             {
                 "role": "user",
                 "content": "command: Create a tar archive of the 'project' directory and compress it using gzip\n"
