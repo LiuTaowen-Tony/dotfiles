@@ -168,18 +168,18 @@ defaults write NSGlobalDomain AppleMetricUnits -bool true
 
 # Set Fn Key be Fn key
 # 0 for nothing, 1 for change input source, 2 for emoji, 3 for dictation
-defaults write com.apple.HIToolbox AppleFnUsageType -int "0"
+defaults write com.apple.HIToolbox AppleFnUsageType -int "2"
 
 # F1, F2, etc. behave as standard function keys. Press the fn key to use the special features printed on the key.
-defaults write NSGlobalDomain com.apple.keyboard.fnState -bool true
+defaults write NSGlobalDomain com.apple.keyboard.fnState -bool false
 
-if [[ $(defaults read com.apple.HIToolbox AppleEnabledInputSources | grep Shuangpin) ]]; then
-    defaults write  com.apple.HIToolbox AppleEnabledInputSources -array-add '{
-            "Bundle ID" = "com.apple.inputmethod.SCIM";
-            "Input Mode" = "com.apple.inputmethod.SCIM.Shuangpin";
-            InputSourceKind = "Input Mode";
-        }'
-fi
+# if [[ $(defaults read com.apple.HIToolbox AppleEnabledInputSources | grep Shuangpin) ]]; then
+#     defaults write  com.apple.HIToolbox AppleEnabledInputSources -array-add '{
+#             "Bundle ID" = "com.apple.inputmethod.SCIM";
+#             "Input Mode" = "com.apple.inputmethod.SCIM.Shuangpin";
+#             InputSourceKind = "Input Mode";
+#         }'
+# fi
 
 defaults write com.apple.inputmethod.CoreChineseEngineFramework shuangpinLayout -int "4"
 
