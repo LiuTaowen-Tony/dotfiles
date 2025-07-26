@@ -63,7 +63,16 @@ The dotfiles will automatically:
 - Set up git configuration
 - Deploy vim/SpaceVim configuration
 - Install zsh plugins if using zsh
-- **Check for updates in the background**
+- Check for updates in the background
+
+## 🔄 Auto-Update
+
+The dotfiles automatically check for updates when you open a new shell session. Updates are pulled in the background and you'll be notified if new changes are available.
+
+To manually update:
+```bash
+cd ~/dotfiles && git pull
+```
 
 ## 📂 Structure
 
@@ -182,14 +191,7 @@ nano ~/dotfiles/gitconfig
 - **Aliases**: Add custom aliases to the `aliases` file
 - **macOS settings**: Customize system preferences in the `macos` script
 
-## 🔄 Auto-Update
 
-The dotfiles automatically check for updates when you open a new shell session. Updates are pulled in the background and you'll be notified if new changes are available.
-
-To manually update:
-```bash
-cd ~/dotfiles && git pull
-```
 
 ## 🐟 Fish Shell Support
 
@@ -209,6 +211,15 @@ The `macos` script includes optimizations for:
 - **Security**: Secure keyboard entry in Terminal
 
 Run with: `./macos` (requires admin password)
+
+Manual settings:
+- Input method
+- Modifier key
+
+Recommended Apps:
+[Rectangle](https://rectangleapp.com/)
+Hapigo `brew install --cask hapigo`
+
 
 ## 🤝 Contributing
 
