@@ -1,6 +1,3 @@
-[user]
-  name = Tony
-  email = tony_t_liu@outlook.com
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
