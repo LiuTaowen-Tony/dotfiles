@@ -1,11 +1,3 @@
-#!/bin/bash
-
-# A simple script to generate .gitignore files based on project type
-
-# Function to append common ignores to .gitignore
-append_commons() {
-    cat <<EOF >> .gitignore
-
 # Operating System Generated Files
 .DS_Store
 Thumbs.db
@@ -17,6 +9,14 @@ Thumbs.db
 .idea/
 *.sublime-*
 .settings/
+
+# ml related
+lightning_logs/
+checkpoints/
+*.pth
+*.safetensors
+*.ckpt/
+*.pt/
 
 # Build Output Directories
 bin/
@@ -51,11 +51,6 @@ __pycache__/
 .pytest_cache/
 wandb/
 
-# ml related
-lightning_logs/
-checkpoints/
-*.pth
-*.safetensors
 
 node_modules/
 npm-debug.log
@@ -65,10 +60,3 @@ yarn-error.log
 *.war
 *.ear
 
-EOF
-}
-
-# Generate .gitignore based on project type
-append_commons
-
-echo ".gitignore file generated for $project_type project."

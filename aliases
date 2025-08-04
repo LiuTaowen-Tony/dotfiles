@@ -8,7 +8,6 @@ alias ....='cd ../../..'
 alias la='ls -a'
 alias ll='ls -lh'
 alias l='ls -lAh'
-alias rm='trash'
 
 # continue wget
 alias wget='wget -c'
