@@ -6,8 +6,13 @@ if [ $# -lt 1 ]; then
 fi
 
 INPUT=$(echo $1 | tr '/' '.')
-DOT_PY_REMOVED=${INPUT/%.py}
+# remove .py suffix if present
+INPUT=${INPUT/%.py}
+# remove . or .. prefix if present
+INPUT=${INPUT/#./}
+INPUT=${INPUT/#./}
+
 shift
 
-command python3 -m $DOT_PY_REMOVED $@
+command python3 -m $INPUT $@
 
