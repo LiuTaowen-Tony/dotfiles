@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [ $# -ne 2 ]; then
-  echo "requires two args: $0 command outputdir"
-  exit 1
-fi
-
-tmux new-session -d -s "bg$1"  "$1 >> $2 2>&1"
-

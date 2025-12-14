@@ -1,13 +1,107 @@
 #! /bin/bash
 
-if [[ $# -lt 1 ]]; then
-    echo "usage: git acm <your-commit-message>";
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+status_entries=()
+while IFS= read -r -d '' entry; do
+    status_entries+=("$entry")
+done < <(git -c core.quotePath=false status --porcelain=v1 -z)
+
+if [[ ${#status_entries[@]} -eq 0 ]]; then
+    echo "No changes to add."
     exit 1
 fi
 
-INPUT=$1
+files=()
+for entry in "${status_entries[@]}"; do
+    files+=("${entry:3}")
+done
 
-git add .
-git commit -m "$1"
-git push
+select_files() {
+    local selected
+    if command -v fzf >/dev/null 2>&1; then
+        selected="$(printf "%s\n" "${files[@]}" | fzf -m --prompt "Add files > " --header "Select files to stage" || true)"
+        result=()
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && result+=("$line")
+        done <<<"$selected"
+    else
+        echo "Select files to add (space-separated indices, 'a' for all, ENTER to cancel):"
+        local i=0
+        for f in "${files[@]}"; do
+            printf "[%d] %s\n" "$i" "$f"
+            ((i++))
+        done
+        read -r choice
+        if [[ -z "$choice" ]]; then
+            result=()
+            return
+        fi
+        if [[ "$choice" == "a" ]]; then
+            result=("${files[@]}")
+            return
+        fi
+        result=()
+        for idx in $choice; do
+            if [[ $idx =~ ^[0-9]+$ ]] && [[ $idx -ge 0 ]] && [[ $idx -lt ${#files[@]} ]]; then
+                result+=("${files[$idx]}")
+            fi
+        done
+    fi
+}
+
+select_files
+
+if [[ ${#result[@]} -eq 0 ]]; then
+    echo "No files selected; aborting."
+    exit 1
+fi
+
+git add -- "${result[@]}"
+
+# If a message was provided, still open the editor with it prefilled.
+if [[ $# -ge 1 ]]; then
+    tmp_msg_file="$(mktemp /tmp/git_acm_msg.XXXXXX)"
+    printf "%s\n" "$*" >"$tmp_msg_file"
+    git commit --edit -F "$tmp_msg_file"
+    rm -f "$tmp_msg_file"
+    exit 0
+fi
+
+diff_summary="$(git diff --cached --stat)"
+if [[ -z "$diff_summary" ]]; then
+    echo "No staged changes to commit."
+    exit 1
+fi
+
+commit_msg=""
+
+gemini_args=("$script_dir/call_gemini.py" --git_message "$diff_summary" -S)
+if [[ "${GIT_ACM_VERBOSE:-}" != "" ]]; then
+    gemini_args+=("-v")
+fi
+commit_msg_output="$(python3 "${gemini_args[@]}" 2>&1)"
+
+gen_status=$?
+
+if [[ $gen_status -ne 0 ]]; then
+    echo "Gemini generation failed (exit $gen_status):" >&2
+    echo "$commit_msg_output" >&2
+else
+    commit_msg="$commit_msg_output"
+fi
+
+# Fallback if generation failed.
+if [[ -z "$commit_msg" ]]; then
+    commit_msg="Update changes"
+fi
+
+tmp_msg_file="$(mktemp /tmp/git_acm_msg.XXXXXX)"
+printf "%s\n" "$commit_msg" >"$tmp_msg_file"
+
+# Opens $EDITOR (e.g., vim) with the generated draft for easy edits.
+git commit --edit -F "$tmp_msg_file"
+rm -f "$tmp_msg_file"
 

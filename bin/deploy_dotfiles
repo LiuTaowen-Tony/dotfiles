@@ -1,36 +1,15 @@
 #!/bin/bash
 
-ensure_content_exist '~/dotfiles/gitconfig' \
-                     '[include]\n\tpath = ~/dotfiles/gitconfig' \
-                     $HOME/.gitconfig
+ensure_file_contains '~/dotfiles/gitconfig' \
+                    '[include]\n\tpath = ~/dotfiles/gitconfig' \
+                    $HOME/.gitconfig
 
-ensure_content_exist "set -g mouse off" $HOME/.tmux.conf
+ensure_file_contains "set -g mouse off" $HOME/.tmux.conf
 
-rm -f "$HOME/.inputrc"
-ln -s "$HOME/dotfiles/inputrc" "$HOME/.inputrc"
-
-spacevimd_path="$HOME/.SpaceVim.d"
-spacevim_path="$HOME/.SpaceVim"
-vimrc_path="$HOME/.vimrc"
-dotfiles_vimrc="$HOME/dotfiles/vimrc"
-dotfiles_spacevim="$HOME/dotfiles/space_vim_config"
-
-if [[ -e "$spacevim_path" ]]; then
-    # If ~/.SpaceVim.d is a symlink, remove it
-    if [[ -L "$spacevimd_path" ]]; then
-        rm "$spacevimd_path"
-    # If it's a directory, remove it recursively
-    elif [[ -d "$spacevimd_path" ]]; then
-        rm -rf "$spacevimd_path"
-    # If it's any other file, remove it
-    elif [[ -e "$spacevimd_path" ]]; then
-        rm "$spacevimd_path"
-    fi
-    ln -s "$dotfiles_spacevim" "$spacevimd_path"
+if [ -e "$HOME/.SpaceVim" ]; then
+    rm -rf "$HOME/.SpaceVim.d"
+    ln -s "$HOME/dotfiles/space_vim_config" "$HOME/.SpaceVim.d"
 else
-    if [[ -e "$vimrc_path" ]]; then
-        rm "$vimrc_path"
-    fi
-    ln -s "$dotfiles_vimrc" "$vimrc_path"
+    rm -f "$HOME/.vimrc"
+    ln -s "$HOME/dotfiles/vimrc" "$HOME/.vimrc"
 fi
-

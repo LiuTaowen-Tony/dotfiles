@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail            # Fail fast on errors/undefined vars
 
 TRASH_DIR="${HOME}/.Trash"

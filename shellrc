@@ -1,15 +1,26 @@
 #!/bin/bash
 
 export PATH="$HOME/dotfiles/bin:$PATH"
-source "$HOME/dotfiles/bin/export_build"
+
+[ -d "$HOME/build" ] || mkdir -p "$HOME/build" 
+for dir in "$HOME/build"/*; do
+  [ -d "$dir/bin" ] && PATH="$dir/bin:$PATH"
+  [ -d "$dir/lib" ] && LD_LIBRARY_PATH="$dir/lib:$LD_LIBRARY_PATH"
+done
+export PATH
+export LD_LIBRARY_PATH
 
 # only do following when interactive
-
-if [[ $- == *i* ]] ; then
+case "$-" in
+  *i*)
+    # fall through
+    ;;
+  *)
+    return 0 2>/dev/null || exit 0
+    ;;
+esac
 
 export MAKE='make -j16'
-
-
 
 git_info() {
     branch=$(git branch 2>/dev/null | grep '*' | sed 's/* //')
@@ -23,65 +34,51 @@ git_info() {
 
 }
 
-error_code () { 
-  local ERROR_CODE=$? 
-  if [[ $ERROR_CODE = 0 ]] ; then echo -en "\033[32m→" ; else echo -en "\033[31m!${ERROR_CODE}" ; fi 
-}
-
 ############################## SHELL SPECIFIC ##############################
 current_shell=$(ps -p $$ -ocomm=)
-if [[ $current_shell == *"bash"* ]] ; then # BASH SPECIFIC
-  # Case-insensitive globbing (used in pathname expansion)
-  shopt -s nocaseglob;
-  # Append to the Bash history file, rather than overwriting it
-  shopt -s histappend;
-  # Autocorrect typos in path names when using `cd`
-  shopt -s cdspell;
-  # Enable some Bash 4 features when possible:
-  # * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
-  # * Recursive globbing, e.g. `echo **/*.txt`
-  for option in autocd globstar; do
-    shopt -s "$option" 2> /dev/null;
-  done;
-  if [ -n "$BASH_VERSION" ] ; then
-      if [ -n "$BASH_COMPLETION_USER_FILE" ] && [ -f "$BASH_COMPLETION_USER_FILE" ]; then
-          source "$BASH_COMPLETION_USER_FILE"
-      elif [ -f /usr/share/bash-completion/bash_completion ]; then
-          source /usr/share/bash-completion/bash_completion
-      elif [ -f /etc/bash_completion ]; then
-          source /etc/bash_completion
-      elif [ -f "$HOME/.bash_completion" ]; then
-          source "$HOME/.bash_completion"
-      elif [ -f "$HOME/.local/share/bash-completion/bash_completion" ]; then
-          source "$HOME/.local/share/bash-completion/bash_completion"
-      fi
-  fi
-  PS1='\[\033[32m→\]\[\033[0m\] \[\033[32m\]\h \[\033[1;34m\]\W\[\033[0m\]$(git_info) '
-elif [[ $current_shell == *"zsh"* ]] ; then # ZSH SPECIFIC
-  setopt interactivecomments
-  setopt CORRECT
-  setopt CORRECT_ALL
-  setopt NO_CASE_GLOB
-  setopt SHARE_HISTORY # share history across multiple zsh sessions
-  setopt APPEND_HISTORY # append to history
-  setopt HIST_EXPIRE_DUPS_FIRST # expire duplicates first
-  setopt HIST_IGNORE_DUPS # do not store duplications
-  setopt HIST_FIND_NO_DUPS #ignore duplicates when searching
-  setopt HIST_REDUCE_BLANKS # removes blank lines from history
-  HISTFILE="${HOME}/.zsh_history"
-  HISTSIZE=2000
-  SAVEHIST=5000
-  autoload -Uz compinit && compinit 
-  ensure zsh
-  if [ -d $HOME/.zsh/zsh-autosuggestions ] ; then source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ; fi
-  if [ -d $HOME/.zsh/zsh-syntax-highlighting ] ; then source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ; fi
-  precmd() {
-    # Determine if the last command succeeded or failed
-    local ERROR_CODE=$?
-    if [ $ERROR_CODE -ne 0 ]; then arrow="%F{red}!${ERROR_CODE}" ; else arrow="%F{green}→" ; fi 
-    PROMPT="${arrow} %F{green}%m %F{blue}%B%~%b%f$(git_info) "
-  }
-fi
+case "$current_shell" in
+  *bash*)
+    # Case-insensitive globbing (used in pathname expansion)
+    shopt -s nocaseglob;
+    # Append to the Bash history file, rather than overwriting it
+    shopt -s histappend;
+    # Autocorrect typos in path names when using `cd`
+    shopt -s cdspell;
+    # Enable some Bash 4 features when possible:
+    # * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
+    # * Recursive globbing, e.g. `echo **/*.txt`
+    for option in autocd globstar; do
+      shopt -s "$option" 2> /dev/null;
+    done;
+    oldPS1=$PS1
+    PS1='\[\033[32m→\]\[\033[0m\] \[\033[32m\]\h \[\033[1;34m\]\W\[\033[0m\]$(git_info) '
+    ;;
+  *zsh*)
+    setopt interactivecomments
+    setopt CORRECT
+    setopt CORRECT_ALL
+    setopt NO_CASE_GLOB
+    setopt SHARE_HISTORY # share history across multiple zsh sessions
+    setopt APPEND_HISTORY # append to history
+    setopt HIST_EXPIRE_DUPS_FIRST # expire duplicates first
+    setopt HIST_IGNORE_DUPS # do not store duplications
+    setopt HIST_FIND_NO_DUPS #ignore duplicates when searching
+    setopt HIST_REDUCE_BLANKS # removes blank lines from history
+    HISTFILE="${HOME}/.zsh_history"
+    HISTSIZE=2000
+    SAVEHIST=5000
+    autoload -Uz compinit && compinit 
+    bootstrap zsh_plugins
+    if [ -d $HOME/.zsh/zsh-autosuggestions ] ; then source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ; fi
+    if [ -d $HOME/.zsh/zsh-syntax-highlighting ] ; then source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ; fi
+    precmd() {
+      # Determine if the last command succeeded or failed
+      local ERROR_CODE=$?
+      if [ $ERROR_CODE -ne 0 ]; then arrow="%F{red}!${ERROR_CODE}" ; else arrow="%F{green}→" ; fi 
+      PROMPT="${arrow} %F{green}%m %F{blue}%B%~%b%f$(git_info) "
+    }
+    ;;
+esac
 
 ############################## OS SPECIFIC ##############################
 if [ $(uname) = "Darwin" ] ; then
@@ -102,31 +99,33 @@ fi
 source $HOME/dotfiles/aliases
 
 ##############################  AUTO UPDATE  ##############################
-CHECK_OUTPUT="$HOME/.check_update_output.txt"
+[ -d "$HOME/dotfiles/tmp" ] || mkdir -p "$HOME/dotfiles/tmp"
+CHECK_OUTPUT="$HOME/dotfiles/tmp/.check_update_output.txt"
 touch $CHECK_OUTPUT
 cat $CHECK_OUTPUT
 cat /dev/null > $CHECK_OUTPUT
-
-ensure_content_exist 'source $HOME/dotfiles/shellrc' "$HOME/.bashrc"
 
 update() {
   cd "$HOME/dotfiles" || return
   local PULL_MESSAGE
   PULL_MESSAGE=$(git pull)
-  if [[ $PULL_MESSAGE == *Already* ]]; then
-    echo "dotfiles is updated ✅ "
-  elif [[ $PULL_MESSAGE == *conflict* ]]; then
-    echo "$TARGET_DIR merge conflict detected. Please merge the changes manually. ❌"
-    git merge --abort > /dev/null
-  else
-    echo "dotfiles has update ❗️"
-    git st -s
-  fi
+  case "$PULL_MESSAGE" in
+    *Already*)
+      echo "dotfiles is updated ✅ "
+      ;;
+    *conflict*)
+      echo "$TARGET_DIR merge conflict detected. Please merge the changes manually. ❌"
+      git merge --abort > /dev/null
+      ;;
+    *)
+      echo "dotfiles has update ❗️"
+      git st -s
+      ;;
+  esac
 }
+
 
 set +m
 update >> "$CHECK_OUTPUT" & disown
 deploy_dotfiles & disown
 set -m
-
-fi #  interative

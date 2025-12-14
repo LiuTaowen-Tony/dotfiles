@@ -1,6 +1,0 @@
-#!/bin/bash
-
-ssh-keygen
-cat $HOME/.ssh/id_rsa.pub
-printf "\n https://github.com/settings/ssh/new\n"
-

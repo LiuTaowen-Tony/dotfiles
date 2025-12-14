@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# am
+
+bootstrap_am () {
+  if command -v appman > /dev/null 2>&1; then
+    return
+  fi
+  # wget -q https://raw.githubusercontent.com/ivan-hc/AM/main/AM-INSTALLER && chmod a+x ./AM-INSTALLER && ./AM-INSTALLER && rm ./AM-INSTALLER
+  # wget -q "https://raw.githubusercontent.com/ivan-hc/AM/main/APP-MANAGER" -O ./appman && chmod a+x ./appman
+  ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
+  BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+  mkdir -p "$BINDIR"
+  if ! echo $PATH | grep "$BINDIR" >/dev/null 2>&1; then 
+    if [ -e ~/.bashrc ] && ! grep 'PATH="$PATH:$BINDIR"' ~/.bashrc >/dev/null 2>&1; then
+      printf '\n%s\n' 'BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"' >> ~/.bashrc
+      printf '\n%s\n' 'if ! echo $PATH | grep "$BINDIR" >/dev/null 2>&1; then' >> ~/.bashrc
+      printf '	export PATH="$PATH:$BINDIR"\nfi\n' >> ~/.bashrc
+    fi
+    if [ -e "$ZSHRC" ] && ! grep 'PATH="$PATH:$BINDIR"' "$ZSHRC" >/dev/null 2>&1; then
+      printf '\n%s\n' 'BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"' >> "$ZSHRC"
+      printf '\n%s\n' 'if ! echo $PATH | grep "$BINDIR" >/dev/null 2>&1; then' >> "$ZSHRC"
+      printf '	export PATH="$PATH:$BINDIR"\nfi\n' >> "$ZSHRC"
+    fi
+  fi
+  wget -q "https://raw.githubusercontent.com/ivan-hc/AM/$AM_BRANCH/APP-MANAGER" -O "$BINDIR"/appman && chmod a+x "$BINDIR"/appman
+}
+
+# spacevim
+bootstrap_spacevim () {
+  if [ -f "$HOME/.SpaceVim.d" ]; then
+    return
+  fi
+  curl -sLf https://spacevim.org/install.sh | bash
+}
+
+bootstrap_zsh_plugins () {
+  DOT_ZSH=$HOME/.zsh
+  mkdir -p $DOT_ZSH
+  cd $DOT_ZSH
+  if ! [ -e $DOT_ZSH/zsh-syntax-highlighting ] ; then 
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git
+  fi
+  if ! [ -e $DOT_ZSH/zsh-autosuggestions ] ; then 
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git
+  fi
+}
+
+bootstrap_fzf () {
+  if [ -d "$HOME/.fzf" ]; then
+    return
+  fi
+  git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+  ~/.fzf/install
+}
+
+if [ $# != 1 ] ; then
+  echo "usage: bootstrap [spacevim|zsh_plugins|am]"
+  exit 1
+fi
+
+"bootstrap_$1"
+exit 0
+

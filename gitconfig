@@ -7,10 +7,12 @@
   recurse = true
 [core]
   autocrlf = input
+  editor = vim
 [alias]
   ini = ! git init && cp $HOME/dotfiles/common_gitignore .gitignore
   ignore = ! cp $HOME/dotfiles/common_gitignore .gitignore
   sub = submodule
+  update = submodule update --init --recursive
   st = status -s
   se = !git rev-list --all | xargs git grep -F
   cm = commit -m

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ERROR_STR="Usage: ensure_content_exist [TEST_STRING] <CONTENT> <FILE_PATH>"
+ERROR_STR="Usage: ensure_file_contains [TEST_STRING] <CONTENT> <FILE_PATH>"
 
 if [[ $# -ne 2 && $# -ne 3 ]]; then
     echo "$ERROR_STR"

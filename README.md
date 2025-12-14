@@ -80,7 +80,7 @@ cd ~/dotfiles && git pull
 dotfiles/
 ├── bin/                    # Utility scripts
 │   ├── deploy_dotfiles     # Setup and deployment
-│   ├── ensure              # Install development tools
+│   ├── bootstrap           # Install development tools
 │   ├── my_copilot.py      # AI bash translator
 │   ├── trash              # Safe file deletion
 │   └── ...                # More utilities
@@ -138,12 +138,12 @@ git amend   # Amend last commit
 
 ### Utility Scripts
 
-#### `ensure` - Install Development Tools
+#### `bootstrap` - Install Development Tools
 ```bash
-ensure zsh       # Install zsh plugins
-ensure spacevim  # Install SpaceVim
-ensure asdf      # Install asdf version manager
-ensure x_cmd     # Install x-cmd toolkit
+bootstrap zsh       # Install zsh plugins
+bootstrap spacevim  # Install SpaceVim
+bootstrap asdf      # Install asdf version manager
+bootstrap x_cmd     # Install x-cmd toolkit
 ```
 
 #### `=` - AI Bash Translator
@@ -152,6 +152,16 @@ Translates natural language to bash commands using AI:
 = "create a tar archive of project folder"
 # Output: tar -czvf project.tar.gz project
 ```
+
+#### `copilot` - AI assistant dispatcher
+`copilot` is a two-layer tool: `bin/my_copilot.py` is a neutral Gemini engine that simply accepts a prompt (`--prompt` or `--prompt-file`), shows a small spinner, and emits the raw completion. `bin/copilot` is the dispatcher that builds persona-specific prompts, feeds them to the engine, and routes the result to the right user-facing flow.
+
+Examples:
+```bash
+copilot bash "find all .txt files and delete them"
+copilot commit -s "Fix spinner" -d "Guard against mode-specific assumptions"
+```
+The `commit` flow opens `$EDITOR` with the generated message before calling `git commit -F` when you save.
 
 #### `trash` - Safe File Deletion
 this is aliased to rm

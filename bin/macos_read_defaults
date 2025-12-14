@@ -1,5 +1,7 @@
 #/bin/bash
 
+# read apple defaults
+
 for i in `defaults domains | tr ',' '\n'`; 
     do echo "********* READING DEFAULT DOMAIN $i **********"; 
     echo; 
