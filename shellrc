@@ -23,12 +23,13 @@ esac
 export MAKE='make -j16'
 
 git_info() {
+    local branch
     branch=$(git branch 2>/dev/null | grep '*' | sed 's/* //')
     if [ -n "$branch" ] ; then
         if git diff-index --quiet HEAD --; then
             echo " ($branch)"
         else
-            echo " ($branch)⚠️ "
+            echo " ($branch)! "
         fi
     fi
 
