@@ -24,15 +24,14 @@ export MAKE='make -j16'
 
 git_info() {
     local branch
-    branch=$(git branch 2>/dev/null | grep '*' | sed 's/* //')
-    if [ -n "$branch" ] ; then
-        if git diff-index --quiet HEAD --; then
-            echo " ($branch)"
-        else
-            echo " ($branch)! "
-        fi
-    fi
+    branch=$(git branch --show-current 2>/dev/null) || return
+    [ -z "$branch" ] && return
 
+    if git diff-index --quiet HEAD -- 2>/dev/null; then
+        printf '(%s)' "$branch"
+    else
+        printf '!%s!' "$branch"
+    fi
 }
 
 ############################## SHELL SPECIFIC ##############################
@@ -52,7 +51,7 @@ case "$current_shell" in
       shopt -s "$option" 2> /dev/null;
     done;
     oldPS1=$PS1
-    PS1='\[\033[32m→\]\[\033[0m\] \[\033[32m\]\h \[\033[1;34m\]\W\[\033[0m\]$(git_info) '
+    PS1='\[\033[32m\]→ \h \[\033[1;34m\]\W\[\033[0m\] $(git_info) '
     ;;
   *zsh*)
     setopt interactivecomments
