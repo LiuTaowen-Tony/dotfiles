@@ -10,7 +10,7 @@
   editor = vim
 [alias]
   ini = ! git init && cp $HOME/dotfiles/common_gitignore .gitignore
-  ignore = ! cp $HOME/dotfiles/common_gitignore .gitignore
+  ignore = ! cat $HOME/dotfiles/common_gitignore >> .gitignore
   sub = submodule
   update = submodule update --init --recursive
   st = status -s

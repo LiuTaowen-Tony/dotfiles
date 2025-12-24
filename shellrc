@@ -30,9 +30,10 @@ git_info() {
     if git diff-index --quiet HEAD -- 2>/dev/null; then
         printf '(%s)' "$branch"
     else
-        printf '!%s!' "$branch"
+        printf '[%s]' "$branch"
     fi
 }
+
 
 ############################## SHELL SPECIFIC ##############################
 current_shell=$(ps -p $$ -ocomm=)
@@ -50,8 +51,11 @@ case "$current_shell" in
     for option in autocd globstar; do
       shopt -s "$option" 2> /dev/null;
     done;
-    oldPS1=$PS1
-    PS1='\[\033[32m\]→ \h \[\033[1;34m\]\W\[\033[0m\] $(git_info) '
+    error_code() {
+      local ERROR_CODE=$?
+      if [ $ERROR_CODE -ne 0 ]; then arrow="!${ERROR_CODE} " ; else arrow="" ; fi 
+    }
+    PS1='$(error_code)\[\033[32m\]\h \[\033[1;34m\]\W\[\033[0m\] $(git_info) '
     ;;
   *zsh*)
     setopt interactivecomments
@@ -74,8 +78,8 @@ case "$current_shell" in
     precmd() {
       # Determine if the last command succeeded or failed
       local ERROR_CODE=$?
-      if [ $ERROR_CODE -ne 0 ]; then arrow="%F{red}!${ERROR_CODE}" ; else arrow="%F{green}→" ; fi 
-      PROMPT="${arrow} %F{green}%m %F{blue}%B%~%b%f$(git_info) "
+      if [ $ERROR_CODE -ne 0 ]; then arrow="%F{red}!${ERROR_CODE} " ; else arrow="" ; fi 
+      PROMPT="${arrow}%F{green}%m %F{blue}%~%f $(git_info) "
     }
     ;;
 esac

@@ -1,3 +1,63 @@
+# Operating System Generated Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Editor and IDE Specific Files
+.vscode/
+.idea/
+*.sublime-*
+.settings/
+
+# ml related
+lightning_logs/
+checkpoints/
+*.pth
+*.safetensors
+*.ckpt/
+*.pt/
+
+# Build Output Directories
+bin/
+build/
+out/
+CMakeFiles/
+
+# Version Control System Folders
+.svn/
+CVS/
+
+# Temporary Files and Logs
+*.tmp
+*.temp
+
+# Security and Environment Files
 .env
-tmp
+.env.local
+*.pem
+*.key
+
+# Database Files
+*.db
+*.sql
+*.sqlite
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv
+.venv/
+.pytest_cache/
+wandb/
+
+
+node_modules/
+npm-debug.log
+yarn-error.log
+
+*.class*.jar
+*.war
+*.ear
+tmp/
 
