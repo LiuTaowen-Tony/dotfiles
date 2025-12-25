@@ -90,6 +90,14 @@ if [ $(uname) = "Darwin" ] ; then
   export LSCOLORS=ExGxBxDxCxEgEdxbxgxcxd
 fi
 
+############################## HOSTNAME SPECIFIC ##############################
+case $(hostname) in
+  *autodl*)
+    [ -f /root/autodl-tmp ] || mkdir -p /root/autodl-tmp/hf_home
+    export HF_HOME=/root/autodl-tmp/hf_home
+  ;;
+esac
+
 
 ##############################  ALIAS  ##############################
 ncolors=$(tput colors)
