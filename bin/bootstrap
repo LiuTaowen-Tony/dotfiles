@@ -23,6 +23,7 @@ bootstrap_am () {
       printf '	export PATH="$PATH:$BINDIR"\nfi\n' >> "$ZSHRC"
     fi
   fi
+  AM_BRANCH="${AM_BRANCH:-main}"
   wget -q "https://raw.githubusercontent.com/ivan-hc/AM/$AM_BRANCH/APP-MANAGER" -O "$BINDIR"/appman && chmod a+x "$BINDIR"/appman
 }
 
