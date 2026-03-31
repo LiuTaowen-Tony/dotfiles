@@ -142,8 +142,7 @@ git amend   # Amend last commit
 ```bash
 bootstrap zsh       # Install zsh plugins
 bootstrap spacevim  # Install SpaceVim
-bootstrap asdf      # Install asdf version manager
-bootstrap x_cmd     # Install x-cmd toolkit
+bootstrap appman    # Install appman package manager
 ```
 
 #### `=` - AI Bash Translator

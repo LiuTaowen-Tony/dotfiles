@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# am
+# appman
 
-bootstrap_am () {
+bootstrap_appman () {
   if command -v appman > /dev/null 2>&1; then
     return
   fi
@@ -56,7 +56,7 @@ bootstrap_fzf () {
 }
 
 if [ $# != 1 ] ; then
-  echo "usage: bootstrap [spacevim|zsh_plugins|am]"
+  echo "usage: bootstrap [spacevim|zsh_plugins|appman]"
   exit 1
 fi
 
