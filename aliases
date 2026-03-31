@@ -51,4 +51,3 @@ alias gpu3='CUDA_VISIBLE_DEVICES=3'
 
 alias sact='source .venv/bin/activate'
 alias vim='vim "+set mouse="'
-alias claude="claude --dangerously-skip-permissions"

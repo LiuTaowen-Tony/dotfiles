@@ -1,0 +1,15 @@
+{
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true,
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "NotebookEdit(*)",
+      "mcp__*"
+    ]
+  }
+}

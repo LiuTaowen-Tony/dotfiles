@@ -6,6 +6,12 @@ ensure_file_contains '~/dotfiles/gitconfig' \
 
 ensure_file_contains "set -g mouse off" $HOME/.tmux.conf
 
+# Claude Code settings
+if command -v claude &>/dev/null; then
+    mkdir -p "$HOME/.claude"
+    cp "$HOME/dotfiles/claude_settings.json" "$HOME/.claude/settings.json"
+fi
+
 if [ -e "$HOME/.SpaceVim" ]; then
     rm -rf "$HOME/.SpaceVim.d"
     ln -s "$HOME/dotfiles/space_vim_config" "$HOME/.SpaceVim.d"
