@@ -267,6 +267,9 @@ assert_eq 'fork customization' "$(< "$fork_work/custom/user-setting")" \
   'fork custom commits must survive an upstream merge'
 assert_eq "$origin_before" "$(git --git-dir="$origin_bare" rev-parse master)" \
   'automatic update must not push its merge to origin'
+noop_update_output="$(DOTFILES_UPSTREAM_URL="$upstream_bare" "$fork_work/core/update.sh" 2>&1)"
+assert_eq '' "$noop_update_output" \
+  'a successful update with no new commits must stay silent at shell startup'
 pass 'fork custom commits merge upstream defaults without pushing'
 
 IFS='|' read -r official_work upstream_bare fork_work origin_bare \

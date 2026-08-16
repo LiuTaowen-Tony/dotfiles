@@ -35,22 +35,20 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 0
 fi
 
-if ! git fetch upstream master; then
+if ! git fetch --quiet upstream master; then
   echo 'Dotfiles update failed while fetching upstream.' >&2
   exit 1
 fi
 
 before="$(git rev-parse HEAD)"
-if ! git merge --no-edit upstream/master; then
+if ! git merge --quiet --no-edit upstream/master; then
   git merge --abort >/dev/null 2>&1 || true
   echo 'Dotfiles update found a merge conflict; merge was aborted.' >&2
   exit 1
 fi
 
 after="$(git rev-parse HEAD)"
-if [[ "$before" == "$after" ]]; then
-  echo 'Dotfiles is already up to date.'
-else
+if [[ "$before" != "$after" ]]; then
   echo 'Dotfiles updated from upstream.'
   git status --short
 fi
