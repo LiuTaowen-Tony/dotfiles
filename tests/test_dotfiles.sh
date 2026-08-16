@@ -130,6 +130,35 @@ after_snapshot="$(snapshot_deployment "$install_home")"
 assert_eq "$before_snapshot" "$after_snapshot" 'a second deploy must not change deployed content or targets'
 pass 'deploy is idempotent'
 
+refresh_job_home="$TEST_ROOT/refresh-job-home"
+copy_worktree "$refresh_job_home/dotfiles"
+mkdir -p "$refresh_job_home/dotfiles/tmp"
+: > "$refresh_job_home/dotfiles/tmp/.check_update_output.txt"
+printf '%s\n' '#!/usr/bin/env bash' 'sleep 0.1' 'touch "$HOME/refresh-ran"' \
+  > "$refresh_job_home/dotfiles/core/refresh.sh"
+chmod +x "$refresh_job_home/dotfiles/core/refresh.sh"
+refresh_jobs="$(
+  HOME="$refresh_job_home" TERM=xterm bash --noprofile --norc -ic \
+    'source "$HOME/dotfiles/shellrc"; jobs -p' 2>/dev/null
+)"
+assert_eq '' "$refresh_jobs" \
+  'interactive startup must not register auto-refresh as a shell job'
+if command -v zsh >/dev/null 2>&1; then
+  zsh_refresh_jobs="$(
+    HOME="$refresh_job_home" TERM=xterm zsh -dfi -c \
+      'source "$HOME/dotfiles/shellrc"; jobs -p' </dev/null 2>/dev/null
+  )"
+  assert_eq '' "$zsh_refresh_jobs" \
+    'Zsh startup must not print auto-refresh job start or completion notices'
+fi
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  [[ -e "$refresh_job_home/refresh-ran" ]] && break
+  sleep 0.05
+done
+[[ -e "$refresh_job_home/refresh-ran" ]] \
+  || fail 'detaching auto-refresh must not prevent it from running'
+pass 'interactive auto-refresh runs without shell job notifications'
+
 mkdir -p "$install_home/dotfiles/custom/defaults" \
   "$install_home/dotfiles/custom/bin" \
   "$install_home/dotfiles/agents/skills/default-only" \
