@@ -1,0 +1,4 @@
+interface:
+  display_name: "Showcase Writing"
+  short_description: "Build written reports around their strongest value"
+  default_prompt: "Use $showcase-writing to reshape this text around its strongest evidence-backed value."
