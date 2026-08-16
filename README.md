@@ -11,14 +11,14 @@ git clone https://github.com/your-name/dotfiles.git ~/dotfiles
 
 The installer:
 
-- adds `source "$HOME/dotfiles/defaults/shellrc"` to Bash and Zsh startup files;
+- adds `source "$HOME/dotfiles/core/shellrc"` to Bash and Zsh startup files;
 - configures the official HTTPS repository as the `upstream` remote;
 - deploys Git, Vim, and agent configuration.
 
 Fish users should add this line to `~/.config/fish/config.fish`:
 
 ```fish
-source "$HOME/dotfiles/defaults/common_config.fish"
+source "$HOME/dotfiles/core/config.fish"
 ```
 
 ## Layout
@@ -53,9 +53,11 @@ custom/
     └── skills/
 ```
 
-Shell, alias, Fish, and Git fragments load after their default equivalents. `custom/bin/` precedes `bin/` on `PATH`, so a custom command can replace an ordinary command with the same name. An executable `custom/bin/deploy.sh` runs after the default deployment.
+The overlay is limited and additive: only `defaults/`, `agents/`, and `bin/` can be customized, and entries without a custom counterpart continue to use the defaults. A file under `custom/defaults/` replaces the whole same-named default file; it is never merged with that file. This applies to shell, aliases, Fish, Git, Vim, and SpaceVim configuration.
 
-Default and custom agent instructions are regenerated into `~/.local/state/dotfiles/generated/AGENTS.md`, then linked into Claude, Codex, and Cursor. A custom skill replaces the default skill with the same directory name. A custom Claude settings file replaces the default settings file.
+Agent files follow the same overlay rule: a custom `AGENTS.md`, Claude settings file, or same-named skill replaces the default counterpart, while other default and custom skills coexist. The selected `AGENTS.md` is copied to `~/.local/state/dotfiles/generated/AGENTS.md`, then linked into Claude, Codex, and Cursor.
+
+`custom/bin/` precedes `bin/` on `PATH`, so a same-named custom command wins while all other commands remain available. An executable `custom/bin/deploy.sh` runs after the default deployment.
 
 The encrypted environment used by the `=` helper belongs at `custom/defaults/env.gpg`; it is not part of the upstream defaults.
 

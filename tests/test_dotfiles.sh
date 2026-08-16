@@ -65,20 +65,20 @@ snapshot_deployment() {
 install_home="$TEST_ROOT/install-home"
 copy_worktree "$install_home/dotfiles"
 printf '%s\n' 'export BEFORE_DOTFILES=1' 'source $HOME/dotfiles/shellrc' > "$install_home/.bashrc"
-printf '%s\n' 'source "$HOME/dotfiles/shellrc"' > "$install_home/.zshrc"
+printf '%s\n' 'source "$HOME/dotfiles/defaults/shellrc"' > "$install_home/.zshrc"
 printf '%s\n' '[include]' '  path = ~/dotfiles/gitconfig' > "$install_home/.gitconfig"
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
   "$install_home/dotfiles/core/install.sh" >/dev/null
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
   "$install_home/dotfiles/core/install.sh" >/dev/null
 
-assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/defaults/shellrc"' "$install_home/.bashrc")" \
+assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/core/shellrc"' "$install_home/.bashrc")" \
   'installer must add the Bash source exactly once'
-assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/defaults/shellrc"' "$install_home/.zshrc")" \
+assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/core/shellrc"' "$install_home/.zshrc")" \
   'installer must add the Zsh source exactly once'
 assert_eq '0' "$(grep -Fc 'dotfiles/shellrc' "$install_home/.bashrc" || true)" \
   'installer must remove the obsolete Bash source path'
-assert_eq '0' "$(grep -Fc 'dotfiles/shellrc' "$install_home/.zshrc" || true)" \
+assert_eq '0' "$(grep -Fc 'dotfiles/defaults/shellrc' "$install_home/.zshrc" || true)" \
   'installer must remove the obsolete Zsh source path'
 assert_eq 'https://example.test/upstream.git' \
   "$(git -C "$install_home/dotfiles" remote get-url upstream)" \
@@ -100,12 +100,16 @@ pass 'deploy is idempotent'
 
 mkdir -p "$install_home/dotfiles/custom/defaults" \
   "$install_home/dotfiles/custom/bin" \
-  "$install_home/dotfiles/custom/agents/skills/exec-goal"
+  "$install_home/dotfiles/agents/skills/default-only" \
+  "$install_home/dotfiles/custom/agents/skills/exec-goal" \
+  "$install_home/dotfiles/custom/agents/skills/custom-only"
 printf '%s\n' 'export CUSTOM_SHELL_LOADED=1' > "$install_home/dotfiles/custom/defaults/shellrc"
 printf '%s\n' "alias ll='printf custom-alias'" > "$install_home/dotfiles/custom/defaults/aliases"
 printf '%s\n' '[core]' '  editor = custom-editor' > "$install_home/dotfiles/custom/defaults/gitconfig"
 printf '%s\n' '# Custom agent marker' > "$install_home/dotfiles/custom/agents/AGENTS.md"
+printf '%s\n' '# Default-only skill marker' > "$install_home/dotfiles/agents/skills/default-only/SKILL.md"
 printf '%s\n' '# Custom skill marker' > "$install_home/dotfiles/custom/agents/skills/exec-goal/SKILL.md"
+printf '%s\n' '# Custom-only skill marker' > "$install_home/dotfiles/custom/agents/skills/custom-only/SKILL.md"
 printf '%s\n' '#!/usr/bin/env bash' "echo default-script" > "$install_home/dotfiles/bin/layer-probe"
 printf '%s\n' '#!/usr/bin/env bash' "echo custom-script" > "$install_home/dotfiles/custom/bin/layer-probe"
 printf '%s\n' '#!/usr/bin/env bash' \
@@ -120,24 +124,32 @@ HOME="$install_home" "$install_home/dotfiles/core/deploy.sh"
 shell_result="$(
   HOME="$install_home" TERM=xterm DOTFILES_DISABLE_AUTO_REFRESH=1 \
     bash --noprofile --norc -ic \
-      'source "$HOME/dotfiles/defaults/shellrc"; printf "%s|" "$CUSTOM_SHELL_LOADED"; eval ll; printf "|"; layer-probe' \
+      'unset MAKE; source "$HOME/dotfiles/core/shellrc"; printf "%s|%s|" "$CUSTOM_SHELL_LOADED" "${MAKE-unset}"; eval ll; printf "|"; layer-probe' \
       2>/dev/null
 )"
-assert_contains '1|custom-alias|custom-script' "$shell_result" \
+assert_contains '1|unset|custom-alias|custom-script' "$shell_result" \
   "custom shell, aliases, and commands must take precedence over defaults (got '$shell_result')"
 assert_eq 'custom-editor' "$(HOME="$install_home" git config core.editor)" \
-  'custom Git configuration must load after defaults'
+  'custom Git configuration must replace the default file'
+assert_eq '' "$(HOME="$install_home" git config core.autocrlf || true)" \
+  'replaced Git configuration must not retain keys from the default file'
 generated_agents="$install_home/.local/state/dotfiles/generated/AGENTS.md"
-assert_eq '1' "$(grep -Fc '# Agent Rules' "$generated_agents")" \
-  'default agent rules must occur once'
+assert_eq '0' "$(grep -Fc '# Agent Rules' "$generated_agents" || true)" \
+  'custom agent rules must replace the default file'
 assert_eq '1' "$(grep -Fc '# Custom agent marker' "$generated_agents")" \
   'custom agent rules must occur once'
 assert_eq "$install_home/dotfiles/custom/agents/skills/exec-goal" \
   "$(readlink "$install_home/.codex/skills/exec-goal")" \
   'custom skill must replace the same-named default skill'
+assert_eq "$install_home/dotfiles/agents/skills/default-only" \
+  "$(readlink "$install_home/.codex/skills/default-only")" \
+  'default-only skills must remain available'
+assert_eq "$install_home/dotfiles/custom/agents/skills/custom-only" \
+  "$(readlink "$install_home/.codex/skills/custom-only")" \
+  'custom-only skills must be added'
 assert_eq 'after-default' "$(< "$install_home/custom-deploy-order")" \
   'custom deploy hook must run after default agent deployment'
-pass 'custom overlays load after defaults without duplicate agent content'
+pass 'custom overlays replace same-named files and retain other entries'
 
 printf '%s\n' '#!/usr/bin/env bash' 'touch "$HOME/custom-update-ran"' \
   > "$install_home/dotfiles/custom/bin/update.sh"
@@ -253,14 +265,16 @@ for script in "$ROOT"/core/*.sh "$ROOT"/bin/*; do
   [[ -f "$script" ]] || continue
   bash -n "$script"
 done
+bash -n "$ROOT/core/shellrc" "$ROOT/defaults/shellrc"
 if command -v zsh >/dev/null 2>&1; then
-  zsh -n "$ROOT/defaults/shellrc"
+  zsh -n "$ROOT/core/shellrc" "$ROOT/defaults/shellrc"
 fi
 if command -v fish >/dev/null 2>&1; then
-  fish -n "$ROOT/defaults/common_config.fish"
+  fish -n "$ROOT/core/config.fish" "$ROOT/defaults/common_config.fish"
 fi
 git -C "$ROOT" diff --check
-if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/custom/README.md" \
+if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/core/shellrc" \
+    "$ROOT/core/config.fish" "$ROOT/custom/README.md" \
     "$ROOT/tests/test_dotfiles.sh" "$ROOT/README.md"; then
   fail 'new files must not contain trailing whitespace'
 fi

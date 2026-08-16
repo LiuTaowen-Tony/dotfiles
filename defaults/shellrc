@@ -1,8 +1,5 @@
 #!/bin/bash
 
-DOTFILES_ROOT="$HOME/dotfiles"
-export PATH="$DOTFILES_ROOT/custom/bin:$DOTFILES_ROOT/bin:$PATH"
-
 [ -d "$HOME/build" ] || mkdir -p "$HOME/build" 
 for dir in "$HOME/build"/*; do
   [ -d "$dir/bin" ] && PATH="$dir/bin:$PATH"
@@ -108,24 +105,4 @@ if [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
   alias ip='ip -color=auto'
   alias git='git -c color.ui=auto'
   alias dir='dir --color=auto'
-fi
-source "$DOTFILES_ROOT/defaults/aliases"
-if [ -r "$DOTFILES_ROOT/custom/defaults/aliases" ]; then
-  source "$DOTFILES_ROOT/custom/defaults/aliases"
-fi
-
-if [ -r "$DOTFILES_ROOT/custom/defaults/shellrc" ]; then
-  source "$DOTFILES_ROOT/custom/defaults/shellrc"
-fi
-
-##############################  AUTO REFRESH  ##############################
-if [ -z "${DOTFILES_DISABLE_AUTO_REFRESH:-}" ]; then
-  mkdir -p "$DOTFILES_ROOT/tmp"
-  CHECK_OUTPUT="$DOTFILES_ROOT/tmp/.check_update_output.txt"
-  touch "$CHECK_OUTPUT"
-  if [ -s "$CHECK_OUTPUT" ]; then
-    cat "$CHECK_OUTPUT"
-    : > "$CHECK_OUTPUT"
-  fi
-  "$DOTFILES_ROOT/core/refresh.sh" >> "$CHECK_OUTPUT" 2>&1 &
 fi

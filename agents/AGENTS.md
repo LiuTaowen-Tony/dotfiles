@@ -8,10 +8,12 @@ Minimum code that solves the problem. Nothing speculative.
 No features beyond what was asked. No abstractions for single-use code.
 Test: would a senior engineer say this is overcomplicated? If yes, simplify.
 
-## Rule 2 — Goal-Driven Execution
-Define success criteria. Loop until verified.
-Don't follow steps. Define success and iterate.
-Strong success criteria let you loop independently.
+## Rule 2 — Match Execution to Uncertainty
+Solve trivial tasks directly.
+For difficult but foreseeable work, make and follow a plan.
+Use goal-driven execution when important unknowns make the path hard to predict.
+When goal-driven execution is appropriate and a native goal mode is available, prefer the native mode.
+In goal mode, define success criteria and iterate until they are verified.
 
 ## Rule 3 — Tests Verify Intent, Not Just Behavior
 Every test must encode WHY the behavior matters, not just WHAT it does.

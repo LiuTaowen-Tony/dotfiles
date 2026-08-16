@@ -1,0 +1,30 @@
+#!/bin/bash
+
+DOTFILES_ROOT="$HOME/dotfiles"
+export PATH="$DOTFILES_ROOT/custom/bin:$DOTFILES_ROOT/bin:$PATH"
+
+shell_config="$DOTFILES_ROOT/defaults/shellrc"
+[ -r "$DOTFILES_ROOT/custom/defaults/shellrc" ] \
+  && shell_config="$DOTFILES_ROOT/custom/defaults/shellrc"
+source "$shell_config"
+
+case "$-" in
+  *i*) ;;
+  *) return 0 2>/dev/null || exit 0 ;;
+esac
+
+aliases_config="$DOTFILES_ROOT/defaults/aliases"
+[ -r "$DOTFILES_ROOT/custom/defaults/aliases" ] \
+  && aliases_config="$DOTFILES_ROOT/custom/defaults/aliases"
+source "$aliases_config"
+
+if [ -z "${DOTFILES_DISABLE_AUTO_REFRESH:-}" ]; then
+  mkdir -p "$DOTFILES_ROOT/tmp"
+  CHECK_OUTPUT="$DOTFILES_ROOT/tmp/.check_update_output.txt"
+  touch "$CHECK_OUTPUT"
+  if [ -s "$CHECK_OUTPUT" ]; then
+    cat "$CHECK_OUTPUT"
+    : > "$CHECK_OUTPUT"
+  fi
+  "$DOTFILES_ROOT/core/refresh.sh" >> "$CHECK_OUTPUT" 2>&1 &
+fi

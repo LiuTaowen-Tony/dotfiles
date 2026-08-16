@@ -30,11 +30,12 @@ safe_link() {
   ln -sfn "$source_path" "$target_path"
 }
 
-gitconfig_tmp="$(mktemp "$GENERATED_DIR/gitconfig.XXXXXX")"
-git config --file "$gitconfig_tmp" --add include.path "$ROOT/defaults/gitconfig"
+gitconfig_source="$ROOT/defaults/gitconfig"
 if [[ -f "$ROOT/custom/defaults/gitconfig" ]]; then
-  git config --file "$gitconfig_tmp" --add include.path "$ROOT/custom/defaults/gitconfig"
+  gitconfig_source="$ROOT/custom/defaults/gitconfig"
 fi
+gitconfig_tmp="$(mktemp "$GENERATED_DIR/gitconfig.XXXXXX")"
+git config --file "$gitconfig_tmp" --add include.path "$gitconfig_source"
 write_if_changed "$gitconfig_tmp" "$GENERATED_DIR/gitconfig"
 
 touch "$HOME/.gitconfig"
@@ -48,11 +49,11 @@ fi
 "$ROOT/core/ensure_file_contains" 'set -g mouse off' "$HOME/.tmux.conf"
 
 agents_tmp="$(mktemp "$GENERATED_DIR/AGENTS.md.XXXXXX")"
-cp "$ROOT/agents/AGENTS.md" "$agents_tmp"
+agents_source="$ROOT/agents/AGENTS.md"
 if [[ -f "$ROOT/custom/agents/AGENTS.md" ]]; then
-  printf '\n' >> "$agents_tmp"
-  cat "$ROOT/custom/agents/AGENTS.md" >> "$agents_tmp"
+  agents_source="$ROOT/custom/agents/AGENTS.md"
 fi
+cp "$agents_source" "$agents_tmp"
 write_if_changed "$agents_tmp" "$GENERATED_DIR/AGENTS.md"
 
 mkdir -p "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor"

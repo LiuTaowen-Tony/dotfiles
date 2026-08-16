@@ -13,12 +13,15 @@ fi
 
 ensure_shell_source() {
   local rc_file="$1"
-  local source_line='source "$HOME/dotfiles/defaults/shellrc"'
+  local source_line='source "$HOME/dotfiles/core/shellrc"'
   local cleaned_file
 
   touch "$rc_file"
   cleaned_file="$(mktemp "${rc_file}.XXXXXX")"
-  awk '$0 != "source $HOME/dotfiles/shellrc" && $0 != "source \"$HOME/dotfiles/shellrc\""' \
+  awk '$0 != "source $HOME/dotfiles/shellrc" \
+    && $0 != "source \"$HOME/dotfiles/shellrc\"" \
+    && $0 != "source $HOME/dotfiles/defaults/shellrc" \
+    && $0 != "source \"$HOME/dotfiles/defaults/shellrc\""' \
     "$rc_file" > "$cleaned_file"
   if ! cmp -s "$cleaned_file" "$rc_file"; then
     cp "$cleaned_file" "$rc_file"
