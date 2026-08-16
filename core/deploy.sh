@@ -46,7 +46,13 @@ if ! git config --file "$HOME/.gitconfig" --get-all include.path 2>/dev/null \
   git config --file "$HOME/.gitconfig" --add include.path "$GENERATED_DIR/gitconfig"
 fi
 
-"$ROOT/core/ensure_file_contains" 'set -g mouse off' "$HOME/.tmux.conf"
+for config_name in editorconfig inputrc tmux.conf; do
+  config_source="$ROOT/defaults/$config_name"
+  if [[ -f "$ROOT/custom/defaults/$config_name" ]]; then
+    config_source="$ROOT/custom/defaults/$config_name"
+  fi
+  safe_link "$config_source" "$HOME/.$config_name"
+done
 
 agents_tmp="$(mktemp "$GENERATED_DIR/AGENTS.md.XXXXXX")"
 agents_source="$ROOT/agents/AGENTS.md"

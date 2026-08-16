@@ -13,7 +13,7 @@ The installer:
 
 - adds `source "$HOME/dotfiles/shellrc"` to Bash and Zsh startup files;
 - configures the official HTTPS repository as the `upstream` remote;
-- deploys Git, Vim, and agent configuration.
+- deploys Git, Vim, tmux, Readline, EditorConfig, and agent configuration.
 
 Fish users should add this line to `~/.config/fish/config.fish`:
 
@@ -46,7 +46,10 @@ custom/
 │   ├── shellrc
 │   ├── aliases
 │   ├── common_config.fish
-│   └── gitconfig
+│   ├── gitconfig
+│   ├── editorconfig
+│   ├── inputrc
+│   └── tmux.conf
 ├── bin/
 └── agents/
     ├── AGENTS.md
@@ -54,7 +57,7 @@ custom/
     └── skills/
 ```
 
-The overlay is limited and additive: only `defaults/`, `agents/`, and `bin/` can be customized, and entries without a custom counterpart continue to use the defaults. A file under `custom/defaults/` replaces the whole same-named default file; it is never merged with that file. This applies to shell, aliases, Fish, Git, Vim, and SpaceVim configuration.
+The overlay is limited and additive: only `defaults/`, `agents/`, and `bin/` can be customized, and entries without a custom counterpart continue to use the defaults. A file under `custom/defaults/` replaces the whole same-named default file; it is never merged with that file. This applies to shell, aliases, Fish, Git, Vim, SpaceVim, tmux, Readline, and EditorConfig configuration.
 
 Agent files follow the same overlay rule: a custom `AGENTS.md`, Claude settings file, or same-named skill replaces the default counterpart, while other default and custom skills coexist. The selected `AGENTS.md` is copied to `~/.local/state/dotfiles/generated/AGENTS.md`, then linked into Claude, Codex, and Cursor.
 

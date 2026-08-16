@@ -88,6 +88,13 @@ assert_eq '0' "$(git config --file "$install_home/.gitconfig" --get-all include.
   'deploy must remove the obsolete Git include path'
 [[ -L "$install_home/.codex/AGENTS.md" ]] || fail 'default agent rules must be linked for Codex'
 [[ -L "$install_home/.vimrc" ]] || fail 'default Vim configuration must be linked'
+for config_name in editorconfig inputrc tmux.conf; do
+  [[ -L "$install_home/.$config_name" ]] \
+    || fail "default $config_name configuration must be linked"
+  assert_eq "$install_home/dotfiles/defaults/$config_name" \
+    "$(readlink "$install_home/.$config_name")" \
+    "default $config_name link must target the default configuration"
+done
 assert_eq 'vim' "$(HOME="$install_home" git config --global --includes core.editor)" \
   'default Git configuration must load on first install'
 for expected_setting in \
@@ -138,6 +145,9 @@ mkdir -p "$install_home/dotfiles/custom/defaults" \
 printf '%s\n' 'export CUSTOM_SHELL_LOADED=1' > "$install_home/dotfiles/custom/defaults/shellrc"
 printf '%s\n' "alias ll='printf custom-alias'" > "$install_home/dotfiles/custom/defaults/aliases"
 printf '%s\n' '[core]' '  editor = custom-editor' > "$install_home/dotfiles/custom/defaults/gitconfig"
+printf '%s\n' 'custom editorconfig' > "$install_home/dotfiles/custom/defaults/editorconfig"
+printf '%s\n' 'custom inputrc' > "$install_home/dotfiles/custom/defaults/inputrc"
+printf '%s\n' 'custom tmux.conf' > "$install_home/dotfiles/custom/defaults/tmux.conf"
 printf '%s\n' '# Custom agent marker' > "$install_home/dotfiles/custom/agents/AGENTS.md"
 printf '%s\n' '# Default-only skill marker' > "$install_home/dotfiles/agents/skills/default-only/SKILL.md"
 printf '%s\n' '# Custom skill marker' > "$install_home/dotfiles/custom/agents/skills/exec-goal/SKILL.md"
@@ -165,6 +175,11 @@ assert_eq 'custom-editor' "$(HOME="$install_home" git config --global --includes
   'custom Git configuration must replace the default file'
 assert_eq '' "$(HOME="$install_home" git config --global --includes core.autocrlf || true)" \
   'replaced Git configuration must not retain keys from the default file'
+for config_name in editorconfig inputrc tmux.conf; do
+  assert_eq "$install_home/dotfiles/custom/defaults/$config_name" \
+    "$(readlink "$install_home/.$config_name")" \
+    "custom $config_name configuration must replace the default file"
+done
 generated_agents="$install_home/.local/state/dotfiles/generated/AGENTS.md"
 assert_eq '0' "$(grep -Fc '# Agent Rules' "$generated_agents" || true)" \
   'custom agent rules must replace the default file'
