@@ -64,21 +64,21 @@ snapshot_deployment() {
 
 install_home="$TEST_ROOT/install-home"
 copy_worktree "$install_home/dotfiles"
-printf '%s\n' 'export BEFORE_DOTFILES=1' 'source $HOME/dotfiles/shellrc' > "$install_home/.bashrc"
-printf '%s\n' 'source "$HOME/dotfiles/defaults/shellrc"' > "$install_home/.zshrc"
+printf '%s\n' 'export BEFORE_DOTFILES=1' 'source $HOME/dotfiles/defaults/shellrc' > "$install_home/.bashrc"
+printf '%s\n' 'source "$HOME/dotfiles/core/shellrc"' > "$install_home/.zshrc"
 printf '%s\n' '[include]' '  path = ~/dotfiles/gitconfig' > "$install_home/.gitconfig"
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
   "$install_home/dotfiles/core/install.sh" >/dev/null
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
   "$install_home/dotfiles/core/install.sh" >/dev/null
 
-assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/core/shellrc"' "$install_home/.bashrc")" \
+assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/shellrc"' "$install_home/.bashrc")" \
   'installer must add the Bash source exactly once'
-assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/core/shellrc"' "$install_home/.zshrc")" \
+assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/shellrc"' "$install_home/.zshrc")" \
   'installer must add the Zsh source exactly once'
-assert_eq '0' "$(grep -Fc 'dotfiles/shellrc' "$install_home/.bashrc" || true)" \
+assert_eq '0' "$(grep -Fc 'dotfiles/defaults/shellrc' "$install_home/.bashrc" || true)" \
   'installer must remove the obsolete Bash source path'
-assert_eq '0' "$(grep -Fc 'dotfiles/defaults/shellrc' "$install_home/.zshrc" || true)" \
+assert_eq '0' "$(grep -Fc 'dotfiles/core/shellrc' "$install_home/.zshrc" || true)" \
   'installer must remove the obsolete Zsh source path'
 assert_eq 'https://example.test/upstream.git' \
   "$(git -C "$install_home/dotfiles" remote get-url upstream)" \
@@ -115,7 +115,7 @@ mkdir -p "$git_init_project"
 default_shell_result="$(
   HOME="$install_home" TEST_PROJECT="$git_init_project" TERM=xterm \
     DOTFILES_DISABLE_AUTO_REFRESH=1 bash --noprofile --norc -ic \
-      'source "$HOME/dotfiles/core/shellrc"; alias myip >/dev/null; cnmirror on >/dev/null; printf "%s|%s|" "$PIP_INDEX_URL" "$CONDARC"; cd "$TEST_PROJECT"; git init >/dev/null; cnmirror off >/dev/null; printf "%s|%s" "${PIP_INDEX_URL-unset}" "${CONDARC-unset}"' \
+      'source "$HOME/dotfiles/shellrc"; alias myip >/dev/null; cnmirror on >/dev/null; printf "%s|%s|" "$PIP_INDEX_URL" "$CONDARC"; cd "$TEST_PROJECT"; git init >/dev/null; cnmirror off >/dev/null; printf "%s|%s" "${PIP_INDEX_URL-unset}" "${CONDARC-unset}"' \
       2>/dev/null
 )"
 assert_eq "https://pypi.tuna.tsinghua.edu.cn/simple|$install_home/dotfiles/defaults/condarc|unset|unset" \
@@ -156,7 +156,7 @@ HOME="$install_home" "$install_home/dotfiles/core/deploy.sh"
 shell_result="$(
   HOME="$install_home" TERM=xterm DOTFILES_DISABLE_AUTO_REFRESH=1 \
     bash --noprofile --norc -ic \
-      'unset MAKE; source "$HOME/dotfiles/core/shellrc"; printf "%s|%s|" "$CUSTOM_SHELL_LOADED" "${MAKE-unset}"; eval ll; printf "|"; layer-probe' \
+      'unset MAKE; source "$HOME/dotfiles/shellrc"; printf "%s|%s|" "$CUSTOM_SHELL_LOADED" "${MAKE-unset}"; eval ll; printf "|"; layer-probe' \
       2>/dev/null
 )"
 assert_contains '1|unset|custom-alias|custom-script' "$shell_result" \
@@ -297,9 +297,9 @@ for script in "$ROOT"/core/*.sh "$ROOT"/bin/*; do
   [[ -f "$script" ]] || continue
   bash -n "$script"
 done
-bash -n "$ROOT/core/shellrc" "$ROOT/defaults/shellrc"
+bash -n "$ROOT/shellrc" "$ROOT/defaults/shellrc"
 if command -v zsh >/dev/null 2>&1; then
-  zsh -n "$ROOT/core/shellrc" "$ROOT/defaults/shellrc"
+  zsh -n "$ROOT/shellrc" "$ROOT/defaults/shellrc"
 fi
 if command -v fish >/dev/null 2>&1; then
   fish -n "$ROOT/core/config.fish" "$ROOT/defaults/common_config.fish"
@@ -308,7 +308,7 @@ if grep -Fq '/aliases' "$ROOT/core/config.fish"; then
   fail 'Fish loader must not source Bash aliases'
 fi
 git -C "$ROOT" diff --check
-if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/core/shellrc" \
+if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/shellrc" \
     "$ROOT/core/config.fish" "$ROOT/custom/README.md" \
     "$ROOT/tests/test_dotfiles.sh" "$ROOT/README.md"; then
   fail 'new files must not contain trailing whitespace'

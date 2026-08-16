@@ -11,7 +11,7 @@ git clone https://github.com/your-name/dotfiles.git ~/dotfiles
 
 The installer:
 
-- adds `source "$HOME/dotfiles/core/shellrc"` to Bash and Zsh startup files;
+- adds `source "$HOME/dotfiles/shellrc"` to Bash and Zsh startup files;
 - configures the official HTTPS repository as the `upstream` remote;
 - deploys Git, Vim, and agent configuration.
 
@@ -30,6 +30,7 @@ dotfiles/
 ├── bin/        # Ordinary commands and utility scripts
 ├── agents/     # Default agent rules, settings, and skills
 ├── custom/     # Fork-specific overlay for defaults, bin, and agents
+├── shellrc     # Stable Bash/Zsh entry point
 └── README.md
 ```
 
