@@ -29,8 +29,11 @@ alias pscpu='ps auxf | sort -nr -k 3'
 alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
 
 # IP addresses
-alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
-alias localip="ipconfig getifaddr en0"
+# Public IP; keep `ip` available for Linux iproute2.
+alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
+if [ "$(uname)" = 'Darwin' ]; then
+  alias localip='ipconfig getifaddr en0'
+fi
 
 alias ghist="history | grep"
 alias reload="exec ${SHELL} -l"

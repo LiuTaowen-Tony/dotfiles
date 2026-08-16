@@ -8,6 +8,8 @@
 [core]
   autocrlf = input
   editor = vim
+[color]
+  ui = auto
 [alias]
   ini = ! git init && cp $HOME/dotfiles/defaults/common_gitignore .gitignore
   ignore = ! cat $HOME/dotfiles/defaults/common_gitignore >> .gitignore
@@ -32,3 +34,27 @@
   autocorrect = 20
 [init]
   defaultBranch = main
+[push]
+  autoSetupRemote = true
+  followTags = true
+[pull]
+  rebase = false
+[fetch]
+  prune = true
+[rerere]
+  enabled = true
+[merge]
+  conflictStyle = zdiff3
+[rebase]
+  autostash = true
+  autosquash = true
+[commit]
+  verbose = true
+[column]
+  ui = auto
+[branch]
+  sort = -committerdate
+[tag]
+  sort = version:refname
+[diff]
+  colorMoved = default

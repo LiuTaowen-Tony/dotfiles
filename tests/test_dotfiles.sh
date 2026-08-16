@@ -88,8 +88,40 @@ assert_eq '0' "$(git config --file "$install_home/.gitconfig" --get-all include.
   'deploy must remove the obsolete Git include path'
 [[ -L "$install_home/.codex/AGENTS.md" ]] || fail 'default agent rules must be linked for Codex'
 [[ -L "$install_home/.vimrc" ]] || fail 'default Vim configuration must be linked'
-assert_eq 'vim' "$(HOME="$install_home" git config core.editor)" \
+assert_eq 'vim' "$(HOME="$install_home" git config --global --includes core.editor)" \
   'default Git configuration must load on first install'
+for expected_setting in \
+  'color.ui auto' \
+  'push.autoSetupRemote true' \
+  'push.followTags true' \
+  'pull.rebase false' \
+  'fetch.prune true' \
+  'rerere.enabled true' \
+  'merge.conflictStyle zdiff3' \
+  'rebase.autostash true' \
+  'rebase.autosquash true' \
+  'commit.verbose true' \
+  'column.ui auto' \
+  'branch.sort -committerdate' \
+  'tag.sort version:refname' \
+  'diff.colorMoved default'; do
+  read -r setting_key setting_value <<< "$expected_setting"
+  assert_eq "$setting_value" "$(HOME="$install_home" git config --global --includes "$setting_key")" \
+    "default Git setting $setting_key must be deployed"
+done
+
+git_init_project="$TEST_ROOT/git-init-project"
+mkdir -p "$git_init_project"
+default_shell_result="$(
+  HOME="$install_home" TEST_PROJECT="$git_init_project" TERM=xterm \
+    DOTFILES_DISABLE_AUTO_REFRESH=1 bash --noprofile --norc -ic \
+      'source "$HOME/dotfiles/core/shellrc"; alias myip >/dev/null; cnmirror on >/dev/null; printf "%s|%s|" "$PIP_INDEX_URL" "$CONDARC"; cd "$TEST_PROJECT"; git init >/dev/null; cnmirror off >/dev/null; printf "%s|%s" "${PIP_INDEX_URL-unset}" "${CONDARC-unset}"' \
+      2>/dev/null
+)"
+assert_eq "https://pypi.tuna.tsinghua.edu.cn/simple|$install_home/dotfiles/defaults/condarc|unset|unset" \
+  "$default_shell_result" 'default shell must expose reversible China mirrors'
+cmp -s "$git_init_project/.gitignore" "$install_home/dotfiles/defaults/common_gitignore" \
+  || fail 'plain git init must install the common project ignore file'
 pass 'defaults-only install is complete and repeatable'
 
 before_snapshot="$(snapshot_deployment "$install_home")"
@@ -129,9 +161,9 @@ shell_result="$(
 )"
 assert_contains '1|unset|custom-alias|custom-script' "$shell_result" \
   "custom shell, aliases, and commands must take precedence over defaults (got '$shell_result')"
-assert_eq 'custom-editor' "$(HOME="$install_home" git config core.editor)" \
+assert_eq 'custom-editor' "$(HOME="$install_home" git config --global --includes core.editor)" \
   'custom Git configuration must replace the default file'
-assert_eq '' "$(HOME="$install_home" git config core.autocrlf || true)" \
+assert_eq '' "$(HOME="$install_home" git config --global --includes core.autocrlf || true)" \
   'replaced Git configuration must not retain keys from the default file'
 generated_agents="$install_home/.local/state/dotfiles/generated/AGENTS.md"
 assert_eq '0' "$(grep -Fc '# Agent Rules' "$generated_agents" || true)" \
@@ -271,6 +303,9 @@ if command -v zsh >/dev/null 2>&1; then
 fi
 if command -v fish >/dev/null 2>&1; then
   fish -n "$ROOT/core/config.fish" "$ROOT/defaults/common_config.fish"
+fi
+if grep -Fq '/aliases' "$ROOT/core/config.fish"; then
+  fail 'Fish loader must not source Bash aliases'
 fi
 git -C "$ROOT" diff --check
 if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/core/shellrc" \

@@ -59,7 +59,7 @@ Agent files follow the same overlay rule: a custom `AGENTS.md`, Claude settings 
 
 `custom/bin/` precedes `bin/` on `PATH`, so a same-named custom command wins while all other commands remain available. An executable `custom/bin/deploy.sh` runs after the default deployment.
 
-The encrypted environment used by the `=` helper belongs at `custom/defaults/env.gpg`; it is not part of the upstream defaults.
+The encrypted environment used by the `=` helper belongs at `custom/defaults/env.gpg`; it is not part of the upstream defaults. Run `cnmirror on` to use the Tsinghua pip and conda mirrors in the current shell, or `cnmirror off` to return to upstream. China-hosted `autodl` machines enable the mirrors automatically.
 
 ## Updating
 
@@ -74,7 +74,7 @@ The updater fetches and merges `upstream/master`. It skips merging on a dirty wo
 
 ## Commands
 
-Ordinary utilities live in `bin/` and are available through the shell configuration, including `bootstrap`, `git_acm`, `macos`, `pyrun`, and `trash`.
+Ordinary utilities live in `bin/` and are available through the shell configuration, including `bootstrap`, `git_acm`, `macos`, `pyrun`, and `trash`. Bash and Zsh expose `myip` for the public IP; Fish aliases belong in `common_config.fish` because Bash alias syntax is not compatible with Fish.
 
 Run the isolated regression suite with:
 

@@ -10,12 +10,6 @@ end
 source "$shell_config"
 
 if status is-interactive
-  set aliases_config "$DOTFILES_ROOT/defaults/aliases"
-  if test -r "$DOTFILES_ROOT/custom/defaults/aliases"
-    set aliases_config "$DOTFILES_ROOT/custom/defaults/aliases"
-  end
-  source "$aliases_config"
-
   if not set -q DOTFILES_DISABLE_AUTO_REFRESH
     mkdir -p "$DOTFILES_ROOT/tmp"
     set check_output "$DOTFILES_ROOT/tmp/.check_update_output.txt"

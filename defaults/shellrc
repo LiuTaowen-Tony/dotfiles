@@ -88,11 +88,35 @@ if [ $(uname) = "Darwin" ] ; then
   export LSCOLORS=ExGxBxDxCxEgEdxbxgxcxd
 fi
 
+############################## MIRRORS (ON DEMAND) ##############################
+cnmirror() {
+  case "${1:-}" in
+    on)
+      export PIP_INDEX_URL='https://pypi.tuna.tsinghua.edu.cn/simple'
+      if [ -f "$HOME/dotfiles/custom/defaults/condarc" ]; then
+        export CONDARC="$HOME/dotfiles/custom/defaults/condarc"
+      else
+        export CONDARC="$HOME/dotfiles/defaults/condarc"
+      fi
+      echo 'cn mirror ON  (pip + conda -> Tsinghua)'
+      ;;
+    off)
+      unset PIP_INDEX_URL CONDARC
+      echo 'cn mirror OFF (upstream)'
+      ;;
+    *)
+      echo 'usage: cnmirror on|off'
+      return 1
+      ;;
+  esac
+}
+
 ############################## HOSTNAME SPECIFIC ##############################
 case $(hostname) in
   *autodl*)
     [ -f /root/autodl-tmp ] || mkdir -p /root/autodl-tmp/hf_home
     export HF_HOME=/root/autodl-tmp/hf_home
+    cnmirror on >/dev/null
   ;;
 esac
 
@@ -103,6 +127,17 @@ if [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
   alias grep='grep --color=auto'
   alias diff='diff --color=auto'
   alias ip='ip -color=auto'
-  alias git='git -c color.ui=auto'
   alias dir='dir --color=auto'
 fi
+
+git() {
+  command git -c color.ui=auto "$@"
+  local git_status=$?
+
+  if [ "$git_status" -eq 0 ] && [ "$#" -eq 1 ] && [ "$1" = 'init' ] \
+      && [ ! -e .gitignore ] && [ -f "$HOME/dotfiles/defaults/common_gitignore" ]; then
+    cp "$HOME/dotfiles/defaults/common_gitignore" .gitignore
+    echo '→ .gitignore created from defaults/common_gitignore'
+  fi
+  return "$git_status"
+}
