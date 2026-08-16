@@ -28,4 +28,3 @@ for src in "$@"; do
 
   mv -- "$src" "$dest"
 done
-

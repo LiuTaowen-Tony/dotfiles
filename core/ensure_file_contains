@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ERROR_STR='Usage: ensure_file_contains [TEST_STRING] <CONTENT> <FILE_PATH>'
+
+if [[ $# -ne 2 && $# -ne 3 ]]; then
+  echo "$ERROR_STR" >&2
+  exit 1
+fi
+
+if [[ $# -eq 2 ]]; then
+  TEST="$1"
+  CONTENT="$1"
+  FILE_PATH="$2"
+else
+  TEST="$1"
+  CONTENT="$2"
+  FILE_PATH="$3"
+fi
+
+FILE_PATH="${FILE_PATH/#\~/$HOME}"
+
+if [[ ! -f "$FILE_PATH" ]]; then
+  printf '%b\n' "$CONTENT" > "$FILE_PATH"
+  exit 0
+fi
+
+grep -Fq "$TEST" "$FILE_PATH" && exit 0
+
+FILE_CONTENT="$(< "$FILE_PATH")"
+{
+  printf '%b\n' "$CONTENT"
+  printf '%s\n' "$FILE_CONTENT"
+} > "$FILE_PATH"

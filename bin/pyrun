@@ -15,4 +15,3 @@ INPUT=${INPUT/#./}
 shift
 
 command python3 -m $INPUT $@
-

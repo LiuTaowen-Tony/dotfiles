@@ -104,4 +104,3 @@ printf "%s\n" "$commit_msg" >"$tmp_msg_file"
 # Opens $EDITOR (e.g., vim) with the generated draft for easy edits.
 git commit --edit -F "$tmp_msg_file"
 rm -f "$tmp_msg_file"
-

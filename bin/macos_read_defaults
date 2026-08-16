@@ -7,4 +7,3 @@ for i in `defaults domains | tr ',' '\n'`;
     echo; 
     defaults read $i; 
 done
-

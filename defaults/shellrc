@@ -1,6 +1,7 @@
 #!/bin/bash
 
-export PATH="$HOME/dotfiles/bin:$PATH"
+DOTFILES_ROOT="$HOME/dotfiles"
+export PATH="$DOTFILES_ROOT/custom/bin:$DOTFILES_ROOT/bin:$PATH"
 
 [ -d "$HOME/build" ] || mkdir -p "$HOME/build" 
 for dir in "$HOME/build"/*; do
@@ -100,44 +101,31 @@ esac
 
 
 ##############################  ALIAS  ##############################
-ncolors=$(tput colors)
-if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
+ncolors=$(tput colors 2>/dev/null || true)
+if [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
   alias grep='grep --color=auto'
   alias diff='diff --color=auto'
   alias ip='ip -color=auto'
   alias git='git -c color.ui=auto'
   alias dir='dir --color=auto'
 fi
-source $HOME/dotfiles/aliases
+source "$DOTFILES_ROOT/defaults/aliases"
+if [ -r "$DOTFILES_ROOT/custom/defaults/aliases" ]; then
+  source "$DOTFILES_ROOT/custom/defaults/aliases"
+fi
 
-##############################  AUTO UPDATE  ##############################
-[ -d "$HOME/dotfiles/tmp" ] || mkdir -p "$HOME/dotfiles/tmp"
-CHECK_OUTPUT="$HOME/dotfiles/tmp/.check_update_output.txt"
-touch $CHECK_OUTPUT
-cat $CHECK_OUTPUT
-cat /dev/null > $CHECK_OUTPUT
+if [ -r "$DOTFILES_ROOT/custom/defaults/shellrc" ]; then
+  source "$DOTFILES_ROOT/custom/defaults/shellrc"
+fi
 
-update() {
-  cd "$HOME/dotfiles" || return
-  local PULL_MESSAGE
-  PULL_MESSAGE=$(git pull)
-  case "$PULL_MESSAGE" in
-    *Already*)
-      echo "dotfiles is updated ✅ "
-      ;;
-    *conflict*)
-      echo "$TARGET_DIR merge conflict detected. Please merge the changes manually. ❌"
-      git merge --abort > /dev/null
-      ;;
-    *)
-      echo "dotfiles has update ❗️"
-      git st -s
-      ;;
-  esac
-}
-
-
-set +m
-update >> "$CHECK_OUTPUT" & disown
-deploy_dotfiles & disown
-set -m
+##############################  AUTO REFRESH  ##############################
+if [ -z "${DOTFILES_DISABLE_AUTO_REFRESH:-}" ]; then
+  mkdir -p "$DOTFILES_ROOT/tmp"
+  CHECK_OUTPUT="$DOTFILES_ROOT/tmp/.check_update_output.txt"
+  touch "$CHECK_OUTPUT"
+  if [ -s "$CHECK_OUTPUT" ]; then
+    cat "$CHECK_OUTPUT"
+    : > "$CHECK_OUTPUT"
+  fi
+  "$DOTFILES_ROOT/core/refresh.sh" >> "$CHECK_OUTPUT" 2>&1 &
+fi

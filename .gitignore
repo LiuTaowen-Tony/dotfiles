@@ -19,7 +19,6 @@ checkpoints/
 *.pt/
 
 # Build Output Directories
-bin/
 build/
 out/
 CMakeFiles/
@@ -60,4 +59,3 @@ yarn-error.log
 *.war
 *.ear
 tmp/
-
