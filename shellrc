@@ -26,5 +26,8 @@ if [ -z "${DOTFILES_DISABLE_AUTO_REFRESH:-}" ]; then
     cat "$CHECK_OUTPUT"
     : > "$CHECK_OUTPUT"
   fi
-  "$DOTFILES_ROOT/core/refresh.sh" >> "$CHECK_OUTPUT" 2>&1 &
+  # Keep refresh asynchronous without adding it to the interactive shell's job table.
+  (
+    "$DOTFILES_ROOT/core/refresh.sh" >> "$CHECK_OUTPUT" 2>&1 &
+  )
 fi
