@@ -4,14 +4,16 @@ set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UPSTREAM_URL="${DOTFILES_UPSTREAM_URL:-https://github.com/LiuTaowen-Tony/dotfiles.git}"
-LOCK_DIR="$ROOT/tmp/update.lock"
+source "$ROOT/core/lock.sh"
 
 mkdir -p "$ROOT/tmp"
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+acquire_lock "$ROOT/tmp/update.lockfile"
+lock_status=$?
+if [[ $lock_status -eq 75 ]]; then
   echo 'Dotfiles update already running; skipping.'
   exit 0
 fi
-trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+[[ $lock_status -eq 0 ]] || exit "$lock_status"
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM

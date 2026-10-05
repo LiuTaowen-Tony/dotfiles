@@ -3,13 +3,15 @@
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCK_DIR="$ROOT/tmp/refresh.lock"
+source "$ROOT/core/lock.sh"
 
 mkdir -p "$ROOT/tmp"
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+acquire_lock "$ROOT/tmp/refresh.lockfile"
+lock_status=$?
+if [[ $lock_status -eq 75 ]]; then
   exit 0
 fi
-trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+[[ $lock_status -eq 0 ]] || exit "$lock_status"
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM

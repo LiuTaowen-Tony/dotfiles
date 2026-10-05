@@ -61,9 +61,11 @@ The overlay is limited and additive: only `defaults/`, `agents/`, and `bin/` can
 
 Agent files follow the same overlay rule: a custom `AGENTS.md`, Claude settings file, or same-named skill replaces the default counterpart, while other default and custom skills coexist. The selected `AGENTS.md` is copied to `~/.local/state/dotfiles/generated/AGENTS.md`, then linked into Claude, Codex, and Cursor.
 
+Deployment removes obsolete skill links that point to removed skill directories in this repository; unrelated links and files are left alone.
+
 `custom/bin/` precedes `bin/` on `PATH`, so a same-named custom command wins while all other commands remain available. An executable `custom/bin/deploy.sh` runs after the default deployment.
 
-The encrypted environment used by the `=` helper belongs at `custom/defaults/env.gpg`; it is not part of the upstream defaults. Run `cnmirror on` to use the Tsinghua pip and conda mirrors in the current shell, or `cnmirror off` to return to upstream. China-hosted `autodl` machines enable the mirrors automatically.
+Run `cnmirror on` to use the Tsinghua pip and conda mirrors in the current shell, or `cnmirror off` to return to upstream. China-hosted `autodl` machines enable the mirrors automatically.
 
 ## Updating
 
@@ -74,11 +76,13 @@ Each interactive shell displays the previous refresh result, clears that cache, 
 ~/dotfiles/core/deploy.sh
 ```
 
-The updater fetches and merges `upstream/master`. It skips merging on a dirty worktree or a branch other than `master`, aborts merge conflicts automatically, and never pushes to the fork remote. Atomic directory locks prevent overlapping updates and refreshes.
+The updater fetches and merges `upstream/master`. It skips merging on a dirty worktree or a branch other than `master`, aborts merge conflicts automatically, and never pushes to the fork remote. OS file locks (`flock` on Linux, `lockf` on macOS/BSD) prevent overlapping updates and refreshes and release automatically when the owning processes exit. Legacy lock directories are ignored.
 
 ## Commands
 
-Ordinary utilities live in `bin/` and are available through the shell configuration, including `bootstrap`, `git_acm`, `macos`, `pyrun`, and `trash`. Bash and Zsh expose `myip` for the public IP; Fish aliases belong in `common_config.fish` because Bash alias syntax is not compatible with Fish.
+Ordinary utilities live in `bin/` and are available through the shell configuration, including `bootstrap`, `macos`, `pyrun`, and `trash`. Bash and Zsh expose `myip` for the public IP; Fish aliases belong in `common_config.fish` because Bash alias syntax is not compatible with Fish.
+
+tmux enables mouse support by default. The shell configuration starts Codex with `--no-alt-screen` and sets `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` for Claude Code to preserve terminal scrollback. Cursor Agent already uses inline rendering by default; no extra flag is needed. This refers to terminal rendering, not the Cursor editor window.
 
 Run the isolated regression suite with:
 

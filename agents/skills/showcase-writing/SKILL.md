@@ -1,13 +1,15 @@
 ---
 name: showcase-writing
-description: Shape written deliverables around their strongest evidence-backed value. Use when planning, drafting, revising, reviewing, or compressing academic papers, research and technical reports, proposals, project summaries, experiment narratives, executive briefs, and other prose reports; when selecting claims, comparisons, metrics, or evidence; or when turning notes and results into a persuasive final narrative instead of a process log or self-review.
+description: Position academic papers and proposals around their strongest evidence-backed value. Use for other reports only when the user explicitly requests value positioning. Exclude code reviews, technical investigations, incident analyses, security audits, and routine summaries unless the user explicitly requests value-positioned rewriting.
 ---
 
 # Showcase Writing
 
-Treat every written deliverable as a launch of its most valuable defensible idea, not as an inventory of everything the work involved. Identify what is genuinely distinctive, useful, capable, efficient, scalable, broadly applicable, or strategically well-balanced, then organize the narrative and evidence around that center.
+Apply this skill to academic papers and proposals, or to other reports when the user explicitly requests contribution or value positioning. Do not apply it by default to code reviews, technical investigations, incident analyses, security audits, or routine summaries.
 
-Apply this principle by default to textual reports. Preserve exhaustive chronology only when the user explicitly needs a log, audit, incident record, or similarly complete factual account.
+Treat an in-scope deliverable as a launch of its most valuable defensible idea, not as an inventory of everything the work involved. Identify what is genuinely distinctive, useful, capable, efficient, scalable, broadly applicable, or strategically well-balanced, then organize the narrative and evidence around that center.
+
+If the user explicitly requests value-positioned rewriting of an excluded document, preserve its factual purpose, necessary chronology, and material negative findings. Explicit user instructions take precedence over this skill's narrative preferences.
 
 ## Establish the showcase
 

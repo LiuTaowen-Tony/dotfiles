@@ -227,6 +227,35 @@ assert_eq 'after-default' "$(< "$install_home/custom-deploy-order")" \
   'custom deploy hook must run after default agent deployment'
 pass 'custom overlays replace same-named files and retain other entries'
 
+external_skill="$TEST_ROOT/external-skill"
+mkdir -p "$external_skill"
+for skills_dir in "$install_home/.claude/skills" "$install_home/.codex/skills" \
+    "$install_home/.cursor/skills-cursor"; do
+  ln -s "$external_skill" "$skills_dir/external-skill"
+  ln -s "$TEST_ROOT/missing-external-skill" "$skills_dir/missing-external-skill"
+  printf '%s\n' 'unmanaged file' > "$skills_dir/unmanaged-file"
+done
+mv "$install_home/dotfiles/agents/skills/default-only" "$TEST_ROOT/removed-default-skill"
+mv "$install_home/dotfiles/custom/agents/skills/custom-only" \
+  "$install_home/dotfiles/custom/agents/skills/renamed-custom-only"
+HOME="$install_home" "$install_home/dotfiles/core/deploy.sh"
+for skills_dir in "$install_home/.claude/skills" "$install_home/.codex/skills" \
+    "$install_home/.cursor/skills-cursor"; do
+  [[ ! -L "$skills_dir/default-only" && ! -L "$skills_dir/custom-only" ]] \
+    || fail 'deleted or renamed repository skills must not leave stale links'
+  assert_eq "$install_home/dotfiles/custom/agents/skills/renamed-custom-only" \
+    "$(readlink "$skills_dir/renamed-custom-only")" \
+    'renaming a custom skill must install its new link'
+  assert_eq "$external_skill" "$(readlink "$skills_dir/external-skill")" \
+    'skill cleanup must preserve unrelated working links'
+  assert_eq "$TEST_ROOT/missing-external-skill" \
+    "$(readlink "$skills_dir/missing-external-skill")" \
+    'a broken link outside this repository is not ours to remove'
+  assert_eq 'unmanaged file' "$(< "$skills_dir/unmanaged-file")" \
+    'skill cleanup must preserve unmanaged files'
+done
+pass 'skill removal and renaming clean only repository-owned links'
+
 printf '%s\n' '#!/usr/bin/env bash' 'touch "$HOME/custom-update-ran"' \
   > "$install_home/dotfiles/custom/bin/update.sh"
 chmod +x "$install_home/dotfiles/custom/bin/update.sh"
@@ -244,8 +273,9 @@ create_update_fixture() {
   local origin_bare="$fixture/origin.git"
 
   mkdir -p "$official_work/core" "$official_work/defaults" "$official_work/custom"
-  cp "$ROOT/core/update.sh" "$official_work/core/update.sh"
+  cp "$ROOT/core/update.sh" "$ROOT/core/lock.sh" "$official_work/core/"
   chmod +x "$official_work/core/update.sh"
+  printf '%s\n' 'tmp/' > "$official_work/.gitignore"
   printf '%s\n' 'base' > "$official_work/defaults/value"
   git -C "$official_work" init -q -b master
   configure_git_user "$official_work"
@@ -304,8 +334,10 @@ IFS='|' read -r official_work upstream_bare fork_work origin_bare \
   <<< "$(create_update_fixture branch-case)"
 git -C "$fork_work" checkout -qb topic
 branch_head="$(git -C "$fork_work" rev-parse HEAD)"
+mkdir -p "$fork_work/tmp/update.lock"
 branch_output="$(DOTFILES_UPSTREAM_URL="$upstream_bare" "$fork_work/core/update.sh")"
-assert_contains 'expected master' "$branch_output" 'non-master branch must explain why update was skipped'
+assert_contains 'expected master' "$branch_output" \
+  'a legacy update lock directory must not prevent the branch check'
 assert_eq "$branch_head" "$(git -C "$fork_work" rev-parse HEAD)" 'non-master branch must not merge'
 pass 'non-master branch is left untouched'
 
@@ -330,6 +362,7 @@ mkdir -p "$install_home/dotfiles/custom/bin"
 printf '%s\n' '#!/usr/bin/env bash' 'echo deploy >> "$HOME/refresh-deploy.log"' 'sleep 1' \
   > "$install_home/dotfiles/custom/bin/deploy.sh"
 chmod +x "$install_home/dotfiles/custom/bin/deploy.sh"
+mkdir -p "$install_home/dotfiles/tmp/refresh.lock"
 HOME="$install_home" "$install_home/dotfiles/core/refresh.sh" >/dev/null 2>&1 &
 first_refresh=$!
 HOME="$install_home" "$install_home/dotfiles/core/refresh.sh" >/dev/null 2>&1 &
@@ -337,8 +370,32 @@ second_refresh=$!
 wait "$first_refresh" || true
 wait "$second_refresh" || true
 assert_eq '1' "$(wc -l < "$install_home/refresh-deploy.log" | tr -d ' ')" \
-  'concurrent refreshes must perform one deployment'
-pass 'atomic refresh lock prevents overlapping update and deploy'
+  'concurrent refreshes must perform one deployment despite a legacy lock directory'
+pass 'file locks prevent overlapping refreshes and ignore legacy lock directories'
+
+lock_file="$TEST_ROOT/crash-recovery.lockfile"
+lock_ready="$TEST_ROOT/lock-ready"
+bash -e -c 'source "$1"; acquire_lock "$2"; touch "$3"; while :; do :; done' \
+  _ "$ROOT/core/lock.sh" "$lock_file" "$lock_ready" &
+lock_holder=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  [[ -e "$lock_ready" ]] && break
+  sleep 0.05
+done
+if [[ ! -e "$lock_ready" ]]; then
+  kill -KILL "$lock_holder" 2>/dev/null || true
+  wait "$lock_holder" 2>/dev/null || true
+  fail 'lock holder must acquire the lock before the contention check'
+fi
+lock_status=0
+bash -c 'source "$1"; acquire_lock "$2"' \
+  _ "$ROOT/core/lock.sh" "$lock_file" || lock_status=$?
+kill -KILL "$lock_holder"
+wait "$lock_holder" 2>/dev/null || true
+assert_eq '75' "$lock_status" 'an active lock must prevent concurrent work'
+bash -c 'source "$1"; acquire_lock "$2"' _ "$ROOT/core/lock.sh" "$lock_file" \
+  || fail 'a killed owner must not leave a stale lock that blocks future work'
+pass 'file locks remain exclusive and recover after a forced exit'
 
 for script in "$ROOT"/core/*.sh "$ROOT"/bin/*; do
   [[ -f "$script" ]] || continue

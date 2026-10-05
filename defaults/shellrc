@@ -19,6 +19,7 @@ case "$-" in
 esac
 
 export MAKE='make -j16'
+export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1
 
 git_info() {
     local branch

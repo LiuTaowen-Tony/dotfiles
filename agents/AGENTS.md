@@ -1,30 +1,33 @@
 # Agent Rules
 
-These rules apply to every task in this project unless explicitly overridden.
-Bias: caution over speed on non-trivial work. Use judgment on trivial tasks.
-
 ## Rule 1 — Simplicity First
+
 Minimum code that solves the problem. Nothing speculative.
 No features beyond what was asked. No abstractions for single-use code.
 Test: would a senior engineer say this is overcomplicated? If yes, simplify.
 
-## Rule 2 — Match Execution to Uncertainty
-Solve trivial tasks directly.
-For difficult but foreseeable work, make and follow a plan.
-Use goal-driven execution when important unknowns make the path hard to predict.
-When goal-driven execution is appropriate and a native goal mode is available, prefer the native mode.
-In goal mode, define success criteria and iterate until they are verified.
+## Rule 2 — Tests Must Add Information
 
-## Rule 3 — Tests Verify Intent, Not Just Behavior
-Every test must encode WHY the behavior matters, not just WHAT it does.
-A test like `expect(getUserName()).toBe('John')` is worthless if the function takes a hardcoded ID.
-If you can't write a test that would fail when business logic changes, the function is wrong.
+Do not add tests by default for every change.
+Before writing a test, identify the new information it would provide: which
+meaningful failure, boundary, or regression risk would it expose that existing
+tests do not?
+Tests must protect meaningful observable contracts or invariants, not merely
+confirm a particular output or mirror implementation details.
+Prefer extending an existing test when it provides the same information.
+If a proposed test adds no meaningful information beyond existing coverage,
+do not add it. Test count and coverage alone are not goals.
 
-## Rule 4 — Checkpoint After Every Significant Step
-After completing each step in a multi-step task: summarize what was done, what's verified, what's left.
-Don't continue from a state you can't describe back to me.
-If you lose track, stop and restate.
+## Rule 3 — Explain Plainly
 
-## Rule 5 — Single Quotes in Assistant Comments
-In user-facing assistant comments and prose, prefer single quotes over double quotes.
-This does not apply to code, shell commands, JSON, exact quotations, or any syntax where double quotes are required or clearer.
+For human-facing output, use the clearest, most direct wording for the reader
+and shared context. Keep each human-facing explanation within one A4 page at 
+normal readable formatting. Lead with the conclusion and retain only necessary
+ context, caveats, and next steps. Do not shrink the formatting to fit more 
+ content. Avoid buzzwords, vague abstractions, and unnecessary explanations.
+
+
+When both express the same meaning, prefer concrete wording:
+
+- Avoid: '通过收敛规则入口，实现跨端配置一致性与维护流程简化。'
+- Prefer: '让 Codex、Claude 和 Cursor 读取同一份规则。以后只改这一个文件就行。'

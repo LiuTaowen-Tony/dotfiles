@@ -79,6 +79,8 @@ fi
 deploy_skills() {
   local target_dir="$1"
   local skill
+  local target_path
+  local source_path
 
   mkdir -p "$target_dir"
   for skill in "$ROOT/agents/skills"/*; do
@@ -91,6 +93,16 @@ deploy_skills() {
       safe_link "$skill" "$target_dir/$(basename "$skill")"
     done
   fi
+  for target_path in "$target_dir"/*; do
+    [[ -L "$target_path" ]] || continue
+    skill="${target_path##*/}"
+    source_path="$(readlink "$target_path")"
+    if [[ "$source_path" == "$ROOT/agents/skills/$skill" \
+        || "$source_path" == "$ROOT/custom/agents/skills/$skill" ]] \
+        && [[ ! -d "$source_path" ]]; then
+      rm -f "$target_path"
+    fi
+  done
 }
 
 deploy_skills "$HOME/.claude/skills"
