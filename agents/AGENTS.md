@@ -21,10 +21,13 @@ do not add it. Test count and coverage alone are not goals.
 ## Rule 3 — Explain Plainly
 
 For human-facing output, use the clearest, most direct wording for the reader
-and shared context. Keep each human-facing explanation within one A4 page at 
-normal readable formatting. Lead with the conclusion and retain only necessary
- context, caveats, and next steps. Do not shrink the formatting to fit more 
- content. Avoid buzzwords, vague abstractions, and unnecessary explanations.
+and shared context. By default, keep each explanation within one A4 page at
+normal readable formatting. Longer responses are appropriate for comprehensive
+discussion summaries, complex research explanations, or explicit requests for
+detail when the extra space is needed to preserve reasoning, evidence, and
+important distinctions. Lead with the conclusion and retain only necessary
+context, caveats, and next steps. Do not shrink the formatting to fit more
+content. Avoid buzzwords, vague abstractions, and unnecessary explanations.
 
 
 When both express the same meaning, prefer concrete wording:
