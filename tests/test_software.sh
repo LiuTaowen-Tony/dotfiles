@@ -266,6 +266,7 @@ rm "$fixture/mock/brew"
 init_home="$fixture/init-home"
 mkdir -p "$init_home/dotfiles/core" "$init_home/dotfiles/bin" "$fixture/init-mock"
 cp "$ROOT/core/install.sh" "$init_home/dotfiles/core/install.sh"
+cp "$ROOT/core/software.sh" "$init_home/dotfiles/core/software.sh"
 cat > "$init_home/dotfiles/core/deploy.sh" <<'SCRIPT'
 #!/usr/bin/env bash
 echo deploy >> "$TEST_LOG"
@@ -282,6 +283,11 @@ cat > "$init_home/dotfiles/bin/macos" <<'SCRIPT'
 #!/usr/bin/env bash
 echo macos >> "$TEST_LOG"
 SCRIPT
+cat > "$fixture/init-mock/python3" <<'SCRIPT'
+#!/usr/bin/env bash
+echo vscode-fonts >> "$TEST_LOG"
+SCRIPT
+chmod +x "$fixture/init-mock/python3"
 cp "$fixture/mock/uname" "$fixture/init-mock/uname"
 cat > "$fixture/init-mock/git" <<'SCRIPT'
 #!/usr/bin/env bash
@@ -295,7 +301,7 @@ chmod +x "$init_home/dotfiles/core/deploy.sh" "$init_home/dotfiles/bin/ensure" "
 for attempt in 1 2; do
   HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" >/dev/null
 done
-assert "$(grep -c '^ensure git rg fd jq$' "$TEST_LOG")" 2 'default install ensures agent tools'
+assert "$(grep -c '^ensure git rg fd jq python3$' "$TEST_LOG")" 2 'default install ensures agent tools'
 assert "$(grep -c '^ensure font-maple-mono-nf-cn font-fira-code$' "$TEST_LOG")" 2 'default install ensures fonts on Linux too'
 assert "$(grep -c '^github-ssh$' "$TEST_LOG")" 2 'default install configures GitHub SSH'
 assert "$(grep -c '^clone$' "$TEST_LOG")" 2 'plugins cloned only once'
@@ -304,23 +310,23 @@ HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core
 assert "$(cat "$TEST_LOG")" deploy 'config-only does not install tools'
 : > "$TEST_LOG"
 HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-github-ssh >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code' 'GitHub SSH can be skipped independently'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure git rg fd jq python3\nensure font-maple-mono-nf-cn font-fira-code\nvscode-fonts' 'GitHub SSH can be skipped independently'
 : > "$TEST_LOG"
 HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --github-ssh --config-only >/dev/null
 assert "$(cat "$TEST_LOG")" $'deploy\ngithub-ssh' 'explicit SSH setup works with config-only regardless of option order'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\nensure rectangle dia vscode wechat hapigo\ngithub-ssh\nmacos' 'Mac install includes apps and preferences after SSH without closing apps'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq python3\nensure font-maple-mono-nf-cn font-fira-code\nvscode-fonts\nensure rectangle dia vscode wechat hapigo\ngithub-ssh\nmacos' 'Mac install includes apps and preferences after SSH without closing apps'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --config-only >/dev/null
 assert "$(cat "$TEST_LOG")" deploy 'Mac config-only skips app downloads and system preferences'
 # Mac downloads and preference writes can be skipped independently.
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-mac-apps >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\ngithub-ssh\nmacos' 'skip Mac apps only'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq python3\nensure font-maple-mono-nf-cn font-fira-code\nvscode-fonts\ngithub-ssh\nmacos' 'skip Mac apps only'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-macos-settings >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\nensure rectangle dia vscode wechat hapigo\ngithub-ssh' 'skip Mac preferences only'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq python3\nensure font-maple-mono-nf-cn font-fira-code\nvscode-fonts\nensure rectangle dia vscode wechat hapigo\ngithub-ssh' 'skip Mac preferences only'
 
 # Run the real preferences script with only mocked defaults/uname available.
 # Unexpected privileged commands, process restarts, or indexing commands fail.
@@ -389,4 +395,5 @@ ssh_setup
 assert "$(cat "$TEST_LOG")" $'auth status\napi --hostname\nauth refresh\nssh-key add' 'missing remote key still gets uploaded'
 cmp "$fixture/original-key" "$ssh_home/.ssh/id_ed25519"
 
+python3 "$ROOT/tests/test_vscode_fonts.py"
 printf 'Software checks passed: routing, repeat runs, launch contract, failure propagation, PATH ordering.\n'

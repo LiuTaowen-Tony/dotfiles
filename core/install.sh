@@ -30,6 +30,9 @@ if [[ "$ROOT" != "$EXPECTED_ROOT" ]]; then
   exit 1
 fi
 
+# Make freshly installed user tools available during this same install run.
+source "$ROOT/core/software.sh"
+
 ensure_shell_source() {
   local rc_file="$1"
   local source_line='source "$HOME/dotfiles/shellrc"'
@@ -63,8 +66,9 @@ if [[ "$config_only" == 0 ]]; then
   if [[ "$(uname -s)" == Darwin ]]; then
     "$ROOT/bin/ensure" brew
   fi
-  "$ROOT/bin/ensure" git rg fd jq
+  "$ROOT/bin/ensure" git rg fd jq python3
   "$ROOT/bin/ensure" font-maple-mono-nf-cn font-fira-code
+  python3 "$ROOT/core/vscode-fonts.py"
   mkdir -p "$HOME/.zsh"
   for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
     if [[ ! -d "$HOME/.zsh/$plugin" ]]; then

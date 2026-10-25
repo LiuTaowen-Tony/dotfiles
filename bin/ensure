@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../core/software.sh"
 
 usage() {
-  echo 'usage: ensure <brew|git|rg|fd|jq|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim> [...]'
+  echo 'usage: ensure <brew|git|rg|fd|jq|python3|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim> [...]'
 }
 
 usable_brew() {
@@ -208,7 +208,7 @@ ensure_tool() {
 # Validate the complete request before installing anything.
 for tool in "$@"; do
   case "$tool" in
-    brew|git|rg|fd|jq|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim) ;;
+    brew|git|rg|fd|jq|python3|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim) ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unsupported tool: $tool" >&2; usage >&2; exit 1 ;;
   esac
