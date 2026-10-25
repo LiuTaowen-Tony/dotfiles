@@ -23,6 +23,9 @@ safe_link() {
   local source_path="$1"
   local target_path="$2"
 
+  if [[ -L "$target_path" && "$(readlink "$target_path")" == "$source_path" ]]; then
+    return
+  fi
   if [[ -e "$target_path" && ! -L "$target_path" ]]; then
     printf 'Skipping %s: an unmanaged file already exists.\n' "$target_path" >&2
     return

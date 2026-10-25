@@ -1,12 +1,26 @@
 #!/bin/bash
 
 DOTFILES_ROOT="$HOME/dotfiles"
-export PATH="$DOTFILES_ROOT/custom/bin:$DOTFILES_ROOT/bin:$PATH"
+export PATH="$DOTFILES_ROOT/custom/bin:$DOTFILES_ROOT/bin:$HOME/b/bin:$HOME/b/sbin:$HOME/.local/bin:$PATH"
 
 shell_config="$DOTFILES_ROOT/defaults/shellrc"
 [ -r "$DOTFILES_ROOT/custom/defaults/shellrc" ] \
   && shell_config="$DOTFILES_ROOT/custom/defaults/shellrc"
 source "$shell_config"
+
+# Keep lazy launchers last, including after re-sourcing this file.
+dotfiles_path=""
+dotfiles_path_rest="$PATH:"
+while [ -n "$dotfiles_path_rest" ]; do
+  dotfiles_path_entry="${dotfiles_path_rest%%:*}"
+  dotfiles_path_rest="${dotfiles_path_rest#*:}"
+  if [ "${dotfiles_path_entry:-.}" -ef "$DOTFILES_ROOT/fallback" ]; then
+    continue
+  fi
+  dotfiles_path="$dotfiles_path$dotfiles_path_entry:"
+done
+export PATH="$dotfiles_path$DOTFILES_ROOT/fallback"
+unset dotfiles_path dotfiles_path_rest dotfiles_path_entry
 
 case "$-" in
   *i*) ;;

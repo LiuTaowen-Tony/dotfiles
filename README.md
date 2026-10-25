@@ -13,7 +13,10 @@ The installer:
 
 - adds `source "$HOME/dotfiles/shellrc"` to Bash and Zsh startup files;
 - configures the official HTTPS repository as the `upstream` remote;
-- deploys Git, Vim, tmux, Readline, EditorConfig, and agent configuration.
+- deploys Git, Vim, tmux, Readline, EditorConfig, and agent configuration;
+- installs coding-agent CLI tools and Zsh plugins;
+- sets up an SSH key and uploads its public key to GitHub (login may be required);
+- on macOS, installs Rectangle, Dia, VS Code, WeChat, and HapiGo through Homebrew Cask, then applies `bin/macos` preferences.
 
 Fish users should add this line to `~/.config/fish/config.fish`:
 
@@ -21,13 +24,48 @@ Fish users should add this line to `~/.config/fish/config.fish`:
 source "$HOME/dotfiles/core/config.fish"
 ```
 
+On macOS, the installer reuses a Homebrew prefix owned and writable by the current user. If none is usable, it installs a private copy at `~/b` with the official Homebrew installer (`--path`, non-interactive, sudo disabled). `~/b/bin` and `~/b/sbin` take precedence over shared Homebrew installations. New GUI applications go to `~/Applications`. The Mac applications are checked in `/Applications`, `~/Applications`, and Homebrew's cask records so existing installs are reused. Current Rectangle and Dia casks require macOS 14+; Dia also requires Apple Silicon. See [Rectangle](https://formulae.brew.sh/cask/rectangle), [Dia](https://formulae.brew.sh/cask/thebrowsercompany-dia), [VS Code](https://formulae.brew.sh/cask/visual-studio-code), [WeChat](https://formulae.brew.sh/cask/wechat), and [HapiGo](https://formulae.brew.sh/cask/hapigo).
+
+`bin/macos` applies user-level keyboard/input, Finder, Dock, and screenshot preferences. Desktop Spaces keep a fixed order, and screenshots are saved to `~/Pictures/Screenshots` (created automatically). It preserves the existing Fn/Globe and Shuangpin choices. It does not change language/region, disk image verification, Spotlight, automatic updates, or other application settings; it does not request sudo or close applications. Some settings require logout/login. Use `--no-mac-apps` to skip the Mac downloads or `--no-macos-settings` to skip these preferences. `--config-only` skips both. You can also install just the applications with `ensure rectangle dia vscode wechat hapigo`.
+
+Removing the old settings from the script does not undo settings applied by an earlier run. This revision does not automatically reset existing preferences.
+
+The official installer restricts custom prefix lengths for binary-package relocation: on Apple Silicon the resolved path must be no longer than `/opt/homebrew`. `/Users/tony/b` fits; longer home-directory names may not. The installer reports incompatible paths without falling back to another account's Homebrew. See [Homebrew custom prefixes](https://docs.brew.sh/Support-Tiers#custom-prefixes).
+
+## Software and GitHub SSH
+
+`core/install.sh` deploys configuration, ensures `git`, `rg`, `fd`, and `jq` are available for coding agents, installs Zsh plugins, and configures GitHub SSH. Use `--no-github-ssh` to skip GitHub setup, or `--config-only` to deploy configuration without downloading software or setting up GitHub SSH. Shell startup loads plugins but never installs them.
+
+Personal tools have launchers at the **end** of PATH: `codex`, `claude`, `gh`, `tmux`, `fzf`, and `nvitop`. Run the normal command with its normal arguments. An existing executable takes precedence; otherwise the launcher installs the tool and immediately runs it. Installation runs automatically; AppMan uses its assume-yes mode and defaults new app installations to `~/Applications` (existing AppMan configuration is retained). Arguments, stdin, and the program's exit status are preserved; installation messages go to stderr.
+
+```bash
+claude                     # Install if missing, then launch
+nvitop                     # Install if missing, then launch (NVIDIA GPU hosts)
+ensure tmux fzf            # Install explicitly without launching
+ensure spacevim            # Optional SpaceVim installation
+~/dotfiles/core/install.sh --config-only --github-ssh
+```
+
+`ensure` skips installed commands. It uses Homebrew only when its prefix belongs to the current user and is writable, otherwise apt/dnf when running as root, otherwise AppMan on Linux. A Homebrew installation owned by another account is skipped. On macOS it bootstraps the private `~/b` installation when needed; AppMan remains Linux-only. It bootstraps AppMan into `${XDG_BIN_HOME:-~/.local/bin}` when needed. It does not invoke sudo automatically. Run `ensure` as root to use system packages, or run `ensure brew` to prepare user-owned Homebrew on macOS. Debian/Fedora's `fd-find` is exposed as `fd` through a local link.
+
+Packages must be available in the selected backend's configured repositories and for the machine's architecture. In particular, do not assume stock apt/dnf or AppMan carries Codex or Claude Code. A missing package or failed download stops the command; no implicit alternate installer fallback is used. You can install from the tool's official distribution yourself; the launcher then uses that executable normally. Homebrew uses the `codex` and `claude-code` casks on macOS.
+
+`nvitop` is a Python package and always uses pip when installation is needed, regardless of the system package manager. It requires Python 3 with venv/pip support, installs into `~/.local/share/dotfiles/venvs/nvitop`, and links the executable into `~/.local/bin`. Existing installations are reused. No uv is required. See the [nvitop installation instructions](https://github.com/XuehaiPan/nvitop#installation).
+
+GitHub login and SSH setup run by default during a full installation. `--github-ssh` can explicitly enable them with `--config-only`. Setup preserves `~/.ssh/id_ed25519` or generates a new key, prompts for a passphrase, and uploads only the public key. Existing GitHub keys are checked before requesting additional OAuth scopes or uploading. When the key is already uploaded and readable, no authorization refresh is requested. Token authentication needs permission to list and add SSH keys. Codex and Claude account login happens when you run each tool.
+
+`setup` and `bootstrap` have been replaced by `core/install.sh` and `ensure`.
+
+References: [AppMan](https://github.com/ivan-hc/AM#what-is-appman), [Claude Code](https://code.claude.com/docs/en/setup), [GitHub CLI](https://github.com/cli/cli#installation), and [GitHub SSH key upload](https://cli.github.com/manual/gh_ssh-key_add).
+
 ## Layout
 
 ```text
 dotfiles/
 ├── core/       # Install, update, refresh, and deploy; upstream-controlled
 ├── defaults/   # Default shell, Git, Vim, and SpaceVim configuration
-├── bin/        # Ordinary commands and utility scripts
+├── bin/        # ensure and ordinary utility scripts
+├── fallback/   # Personal-tool launchers, last on PATH
 ├── agents/     # Default agent rules, settings, and skills
 ├── custom/     # Fork-specific overlay for defaults, bin, and agents
 ├── shellrc     # Stable Bash/Zsh entry point
@@ -80,7 +118,7 @@ The updater fetches and merges `upstream/master`. It skips merging on a dirty wo
 
 ## Commands
 
-Ordinary utilities live in `bin/` and are available through the shell configuration, including `bootstrap`, `macos`, `pyrun`, and `trash`. Bash and Zsh expose `myip` for the public IP; Fish aliases belong in `common_config.fish` because Bash alias syntax is not compatible with Fish.
+Ordinary utilities live in `bin/` and are available through the shell configuration, including `ensure`, `macos`, `pyrun`, and `trash`. Bash and Zsh expose `myip` for the public IP; Fish aliases belong in `common_config.fish` because Bash alias syntax is not compatible with Fish.
 
 tmux enables mouse support by default. The shell configuration starts Codex with `--no-alt-screen` and sets `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` for Claude Code to preserve terminal scrollback. Cursor Agent already uses inline rendering by default; no extra flag is needed. This refers to terminal rendering, not the Cursor editor window.
 

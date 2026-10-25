@@ -1,10 +1,17 @@
 #!/bin/bash
 
-[ -d "$HOME/build" ] || mkdir -p "$HOME/build" 
-for dir in "$HOME/build"/*; do
-  [ -d "$dir/bin" ] && PATH="$dir/bin:$PATH"
-  [ -d "$dir/lib" ] && LD_LIBRARY_PATH="$dir/lib:$LD_LIBRARY_PATH"
-done
+add_build_paths() {
+  # Keep unmatched globs harmless in Zsh, as they are in Bash.
+  [ -z "${ZSH_VERSION:-}" ] || setopt local_options nonomatch
+  local dir
+  [ -d "$HOME/build" ] || mkdir -p "$HOME/build"
+  for dir in "$HOME/build"/*; do
+    [ -d "$dir/bin" ] && PATH="$dir/bin:$PATH"
+    [ -d "$dir/lib" ] && LD_LIBRARY_PATH="$dir/lib:$LD_LIBRARY_PATH"
+  done
+}
+add_build_paths
+unset -f add_build_paths
 export PATH
 export LD_LIBRARY_PATH
 
@@ -71,7 +78,6 @@ case "$current_shell" in
     HISTSIZE=2000
     SAVEHIST=5000
     autoload -Uz compinit && compinit 
-    bootstrap zsh_plugins
     if [ -d $HOME/.zsh/zsh-autosuggestions ] ; then source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ; fi
     if [ -d $HOME/.zsh/zsh-syntax-highlighting ] ; then source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ; fi
     precmd() {

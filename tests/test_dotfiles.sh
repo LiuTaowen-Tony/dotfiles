@@ -68,9 +68,9 @@ printf '%s\n' 'export BEFORE_DOTFILES=1' 'source $HOME/dotfiles/defaults/shellrc
 printf '%s\n' 'source "$HOME/dotfiles/core/shellrc"' > "$install_home/.zshrc"
 printf '%s\n' '[include]' '  path = ~/dotfiles/gitconfig' > "$install_home/.gitconfig"
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
-  "$install_home/dotfiles/core/install.sh" >/dev/null
+  "$install_home/dotfiles/core/install.sh" --config-only >/dev/null
 HOME="$install_home" DOTFILES_UPSTREAM_URL='https://example.test/upstream.git' \
-  "$install_home/dotfiles/core/install.sh" >/dev/null
+  "$install_home/dotfiles/core/install.sh" --config-only >/dev/null
 
 assert_eq '1' "$(grep -Fc 'source "$HOME/dotfiles/shellrc"' "$install_home/.bashrc")" \
   'installer must add the Bash source exactly once'
@@ -418,5 +418,8 @@ if grep -En '[[:blank:]]+$' "$ROOT"/core/*.sh "$ROOT/shellrc" \
   fail 'new files must not contain trailing whitespace'
 fi
 pass 'shell syntax and whitespace checks pass'
+
+bash "$ROOT/tests/test_software.sh"
+pass 'software installation and lazy launchers preserve their contracts'
 
 printf '1..%d\n' "$pass_count"

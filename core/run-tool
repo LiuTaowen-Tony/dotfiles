@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT/core/software.sh"
+tool="${0##*/}"
+if ! software_exists "$tool"; then
+  "$ROOT/bin/ensure" "$tool" </dev/null
+fi
+hash -r
+exec "$tool" "$@"

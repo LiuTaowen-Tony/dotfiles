@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../core/software.sh"
+
+usage() {
+  echo 'usage: ensure <brew|git|rg|fd|jq|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|appman|spacevim> [...]'
+}
+
+usable_brew() {
+  local prefix owner
+  command -v brew >/dev/null 2>&1 || return 1
+  prefix="$(brew --prefix)" || return 1
+  owner="$(stat -c %u "$prefix" 2>/dev/null || stat -f %u "$prefix")" || return 1
+  if [[ "$owner" != "$(id -u)" || ! -w "$prefix" ]]; then
+    echo "Skipping Homebrew: $prefix is not owned and writable by the current user." >&2
+    return 1
+  fi
+}
+
+ensure_brew() (
+  [[ "$(uname -s)" == Darwin ]] || {
+    echo 'Automatic user Homebrew setup is only configured for macOS.' >&2
+    return 1
+  }
+  usable_brew && return 0
+  if [[ -e "$HOME/b/bin/brew" ]]; then
+    echo 'The existing ~/b installation is not usable; check its ownership and permissions.' >&2
+    return 1
+  fi
+  local installer
+  installer="$(mktemp "${TMPDIR:-/tmp}/dotfiles-homebrew.XXXXXX")"
+  trap 'rm -f "$installer" "$installer.progress"' EXIT
+  curl -fLsS https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$installer"
+  # Upstream hides Git transfer progress in non-interactive mode. Keep automatic
+  # installation, but show progress so a slow download does not look stuck.
+  sed 's/quiet_progress=("--quiet")/quiet_progress=("--quiet" "--progress")/' \
+    "$installer" > "$installer.progress"
+  NONINTERACTIVE=1 HOMEBREW_NO_SUDO=1 bash "$installer.progress" --path "$HOME/b"
+  hash -r
+  [[ -x "$HOME/b/bin/brew" ]] && usable_brew
+)
+
+ensure_mac_app() {
+  local package app
+  [[ "$(uname -s)" == Darwin ]] || {
+    echo "$1 is a macOS application." >&2
+    return 1
+  }
+  case "$1" in
+    rectangle) package=rectangle; app=Rectangle ;;
+    dia) package=thebrowsercompany-dia; app=Dia ;;
+    vscode) package=visual-studio-code; app='Visual Studio Code' ;;
+    wechat) package=wechat; app=WeChat ;;
+    hapigo) package=hapigo; app=HapiGo ;;
+  esac
+  if [[ -d "/Applications/$app.app" || -d "$HOME/Applications/$app.app" ]]; then
+    return 0
+  fi
+  ensure_brew
+  if ! brew list --cask "$package" >/dev/null 2>&1; then
+    mkdir -p "$HOME/Applications"
+    brew install --cask --appdir="$HOME/Applications" "$package"
+  fi
+}
+
+ensure_appman() {
+  [[ "$(uname -s)" == Linux ]] || {
+    echo 'AppMan requires Linux. On macOS, use Homebrew owned by your account or install from the official download.' >&2
+    return 1
+  }
+  software_exists appman && return 0
+  local target="${XDG_BIN_HOME:-$HOME/.local/bin}/appman" download
+  mkdir -p "$(dirname "$target")"
+  download="$(mktemp "${target}.XXXXXX")"
+  if ! curl -fLsS "https://raw.githubusercontent.com/ivan-hc/AM/${AM_BRANCH:-main}/APP-MANAGER" -o "$download"; then
+    rm -f "$download"
+    return 1
+  fi
+  chmod +x "$download"
+  mv "$download" "$target"
+}
+
+ensure_tool() {
+  local tool="$1" package="$1" backend
+  case "$tool" in
+    brew) ensure_brew; return ;;
+    rectangle|dia|vscode|wechat|hapigo) ensure_mac_app "$tool"; return ;;
+  esac
+  if [[ "$tool" == spacevim ]]; then
+    [[ -d "$HOME/.SpaceVim" ]] && return 0
+    curl -fLsS https://spacevim.org/install.sh | bash
+    return
+  fi
+  software_exists "$tool" && return 0
+  if [[ "$tool" == nvitop ]]; then
+    local venv="$HOME/.local/share/dotfiles/venvs/nvitop"
+    command -v python3 >/dev/null 2>&1 || {
+      echo 'nvitop needs Python 3 with venv/pip support. Install Python first.' >&2
+      return 1
+    }
+    if [[ ! -x "$venv/bin/python" ]]; then
+      python3 -m venv "$venv"
+    fi
+    "$venv/bin/python" -m pip install --upgrade nvitop
+    [[ -x "$venv/bin/nvitop" ]] || {
+      echo 'pip did not install the nvitop executable.' >&2
+      return 1
+    }
+    mkdir -p "$HOME/.local/bin"
+    ln -s "$venv/bin/nvitop" "$HOME/.local/bin/nvitop"
+    return
+  fi
+  [[ "$tool" != appman ]] || { ensure_appman; return; }
+  case "$tool" in
+    rg) package=ripgrep ;;
+    claude) package=claude-code ;;
+  esac
+  if [[ "$(uname -s)" == Darwin ]]; then
+    ensure_brew
+  fi
+  if usable_brew; then
+    backend=brew
+    echo "Installing $tool with brew..." >&2
+    case "$tool" in
+      codex|claude) brew install --cask --appdir="$HOME/Applications" "$package" ;;
+      *) brew install "$package" ;;
+    esac
+  elif [[ "$(id -u)" == 0 ]] && command -v apt-get >/dev/null 2>&1; then
+    backend=apt
+    [[ "$tool" != fd ]] || package=fd-find
+    if [[ -z "${apt_updated:-}" ]]; then
+      apt-get update
+      apt_updated=1
+    fi
+    apt-get install -y "$package"
+  elif [[ "$(id -u)" == 0 ]] && command -v dnf >/dev/null 2>&1; then
+    backend=dnf
+    [[ "$tool" != fd ]] || package=fd-find
+    dnf install -y "$package"
+  else
+    backend=appman
+    ensure_appman
+    appman_location="${appman_location:-$HOME/Applications}" appman -y -i "$package"
+  fi
+  hash -r
+  software_exists "$tool" || {
+    echo "$backend did not provide '$tool'. Check package availability and the installation PATH." >&2
+    return 1
+  }
+}
+
+[[ $# -gt 0 ]] || { usage >&2; exit 1; }
+# Validate the complete request before installing anything.
+for tool in "$@"; do
+  case "$tool" in
+    brew|git|rg|fd|jq|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|appman|spacevim) ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unsupported tool: $tool" >&2; usage >&2; exit 1 ;;
+  esac
+done
+for tool in "$@"; do
+  # Keep installation logs off the launched program's stdout.
+  ensure_tool "$tool" >&2
+done

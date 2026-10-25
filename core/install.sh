@@ -2,6 +2,25 @@
 
 set -euo pipefail
 
+config_only=0
+github_ssh=auto
+mac_apps=1
+macos_settings=1
+for option in "$@"; do
+  case "$option" in
+    --config-only) config_only=1 ;;
+    --github-ssh) github_ssh=1 ;;
+    --no-github-ssh) github_ssh=0 ;;
+    --no-mac-apps) mac_apps=0 ;;
+    --no-macos-settings) macos_settings=0 ;;
+    -h|--help)
+      echo 'usage: install.sh [--config-only] [--github-ssh|--no-github-ssh] [--no-mac-apps] [--no-macos-settings]'
+      exit 0
+      ;;
+    *) echo "Unknown option: $option" >&2; exit 1 ;;
+  esac
+done
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UPSTREAM_URL="${DOTFILES_UPSTREAM_URL:-https://github.com/LiuTaowen-Tony/dotfiles.git}"
 EXPECTED_ROOT="$(cd "$HOME" && pwd)/dotfiles"
@@ -40,4 +59,25 @@ else
 fi
 
 "$ROOT/core/deploy.sh"
+if [[ "$config_only" == 0 ]]; then
+  if [[ "$(uname -s)" == Darwin ]]; then
+    "$ROOT/bin/ensure" brew
+  fi
+  "$ROOT/bin/ensure" git rg fd jq
+  mkdir -p "$HOME/.zsh"
+  for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+    if [[ ! -d "$HOME/.zsh/$plugin" ]]; then
+      git clone --depth 1 "https://github.com/zsh-users/$plugin.git" "$HOME/.zsh/$plugin"
+    fi
+  done
+  if [[ "$mac_apps" == 1 && "$(uname -s)" == Darwin ]]; then
+    "$ROOT/bin/ensure" rectangle dia vscode wechat hapigo
+  fi
+fi
+if [[ "$github_ssh" == 1 || ( "$github_ssh" == auto && "$config_only" == 0 ) ]]; then
+  bash "$ROOT/core/github-ssh.sh"
+fi
+if [[ "$config_only" == 0 && "$macos_settings" == 1 && "$(uname -s)" == Darwin ]]; then
+  bash "$ROOT/bin/macos"
+fi
 echo 'Dotfiles installed.'
