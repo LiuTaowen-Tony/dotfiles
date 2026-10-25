@@ -1,10 +1,21 @@
 # Agent Rules
 
-## Rule 1 — Simplicity First
+## Rule 1 — Simple, Readable Code
 
-Minimum code that solves the problem. Nothing speculative.
-No features beyond what was asked. No abstractions for single-use code.
-Test: would a senior engineer say this is overcomplicated? If yes, simplify.
+Except for throwaway code that is not kept, design and write code, in any language,
+as if every line will get a Google-level code review. That reviewer rejects code
+that is not needed and code that is hard to follow.
+
+- Scope: the minimum code that solves the problem. Nothing speculative, no features
+  beyond what was asked.
+- Structure: layers, each with one clear job, that the layer above reuses and
+  combines: lower layers wrap a mechanism, higher layers use them to do the task.
+  Each layer exposes a typed API; the layer above never reaches into its internals
+  or assembles command lines for it. A layer or abstraction needs a separate job or
+  a second user; otherwise inline it.
+- Lines: one statement per line. Name intermediate values instead of nesting calls.
+  Names say exactly what a thing is or does. Comments do not restate what the code
+  does; they say why it does it.
 
 ## Rule 2 — Tests Must Add Information
 
