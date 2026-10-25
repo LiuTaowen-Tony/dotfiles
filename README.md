@@ -15,6 +15,7 @@ The installer:
 - configures the official HTTPS repository as the `upstream` remote;
 - deploys Git, Vim, tmux, Readline, EditorConfig, and agent configuration;
 - installs coding-agent CLI tools and Zsh plugins;
+- installs Maple Mono NF CN and Fira Code on macOS and Linux;
 - sets up an SSH key and uploads its public key to GitHub (login may be required);
 - on macOS, installs Rectangle, Dia, VS Code, WeChat, and HapiGo through Homebrew Cask, then applies `bin/macos` preferences.
 
@@ -51,6 +52,8 @@ ensure spacevim            # Optional SpaceVim installation
 Packages must be available in the selected backend's configured repositories and for the machine's architecture. In particular, do not assume stock apt/dnf or AppMan carries Codex or Claude Code. A missing package or failed download stops the command; no implicit alternate installer fallback is used. You can install from the tool's official distribution yourself; the launcher then uses that executable normally. Homebrew uses the `codex` and `claude-code` casks on macOS.
 
 `nvitop` is a Python package and always uses pip when installation is needed, regardless of the system package manager. It requires Python 3 with venv/pip support, installs into `~/.local/share/dotfiles/venvs/nvitop`, and links the executable into `~/.local/bin`. Existing installations are reused. No uv is required. See the [nvitop installation instructions](https://github.com/XuehaiPan/nvitop#installation).
+
+Full installation also ensures **Maple Mono NF CN** and **Fira Code** on every supported machine (macOS and Linux). macOS uses the `font-maple-mono-nf-cn` and `font-fira-code` Homebrew casks in `~/Library/Fonts`. Linux downloads official release archives (Maple 7.9 NF CN unhinted and Fira Code 6.2), verifies SHA-256, and copies TTF files into `${XDG_DATA_HOME:-~/.local/share}/fonts`, refreshing the font cache when `fc-cache` is available. Missing `unzip` is installed through the usual software backend. Existing fonts are reused; installing fonts does not change the selected editor or terminal font. `--config-only` skips fonts, while `--no-mac-apps` still installs them. To install only these fonts, run `ensure font-maple-mono-nf-cn font-fira-code`.
 
 GitHub login and SSH setup run by default during a full installation. `--github-ssh` can explicitly enable them with `--config-only`. Setup preserves `~/.ssh/id_ed25519` or generates a new key, prompts for a passphrase, and uploads only the public key. Existing GitHub keys are checked before requesting additional OAuth scopes or uploading. When the key is already uploaded and readable, no authorization refresh is requested. Token authentication needs permission to list and add SSH keys. Codex and Claude account login happens when you run each tool.
 

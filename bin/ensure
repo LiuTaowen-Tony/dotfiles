@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../core/software.sh"
 
 usage() {
-  echo 'usage: ensure <brew|git|rg|fd|jq|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|appman|spacevim> [...]'
+  echo 'usage: ensure <brew|git|rg|fd|jq|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim> [...]'
 }
 
 usable_brew() {
@@ -80,11 +80,66 @@ ensure_appman() {
   mv "$download" "$target"
 }
 
+ensure_font() (
+  local package="$1" family regular url checksum font_root work actual
+  case "$package" in
+    font-maple-mono-nf-cn)
+      family='Maple Mono NF CN'; regular=MapleMono-NF-CN-Regular.ttf
+      url=https://github.com/subframe7536/Maple-font/releases/download/v7.9/MapleMono-NF-CN-unhinted.zip
+      checksum=ab88522932cf4015dffeaef6dedc59a22a5fefecdcc6e583d9fcd997da5b7cac
+      ;;
+    font-fira-code)
+      family='Fira Code'; regular=FiraCode-Regular.ttf
+      url=https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+      checksum=0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79
+      ;;
+  esac
+  case "$(uname -s)" in
+    Darwin) font_root="$HOME/Library/Fonts" ;;
+    Linux) font_root="${XDG_DATA_HOME:-$HOME/.local/share}/fonts" ;;
+    *) echo 'Font installation supports macOS and Linux.' >&2; return 1 ;;
+  esac
+  [[ ! -s "$font_root/$regular" && ! -s "$font_root/$package/$regular" ]] || return 0
+  if command -v fc-match >/dev/null 2>&1 \
+      && [[ "$(fc-match -f '%{family[0]}' "$family")" == "$family" ]]; then
+    return 0
+  fi
+  if [[ "$(uname -s)" == Darwin ]]; then
+    [[ ! -s "/Library/Fonts/$regular" ]] || return 0
+    ensure_brew
+    brew install --cask "$package"
+    return
+  fi
+  # Font archives work on every Linux distribution, without root or AppMan.
+  ensure_tool unzip
+  work="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-font.XXXXXX")"
+  trap 'rm -rf "$work"' EXIT
+  echo "Downloading $family..." >&2
+  curl -fL --progress-bar --retry 3 --connect-timeout 15 "$url" -o "$work/font.zip"
+  actual="$(sha256sum "$work/font.zip")"
+  [[ "${actual%% *}" == "$checksum" ]] || {
+    echo "Checksum mismatch for $family; no fonts were installed." >&2
+    return 1
+  }
+  unzip -q "$work/font.zip" -d "$work/unpacked"
+  # Both releases contain static TTFs; require the regular face before copying.
+  [[ -n "$(find "$work/unpacked" -type f -name "$regular" -print -quit)" ]] || {
+    echo "The $family archive is missing $regular." >&2
+    return 1
+  }
+  mkdir -p "$font_root/$package"
+  find "$work/unpacked" -type f -name '*.ttf' -exec cp '{}' "$font_root/$package/" \;
+  if command -v fc-cache >/dev/null 2>&1; then
+    fc-cache -f "$font_root/$package"
+  fi
+)
+
 ensure_tool() {
   local tool="$1" package="$1" backend
   case "$tool" in
     brew) ensure_brew; return ;;
     rectangle|dia|vscode|wechat|hapigo) ensure_mac_app "$tool"; return ;;
+    font-maple-mono-nf-cn|font-fira-code) ensure_font "$tool"; return ;;
   esac
   if [[ "$tool" == spacevim ]]; then
     [[ -d "$HOME/.SpaceVim" ]] && return 0
@@ -153,7 +208,7 @@ ensure_tool() {
 # Validate the complete request before installing anything.
 for tool in "$@"; do
   case "$tool" in
-    brew|git|rg|fd|jq|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|appman|spacevim) ;;
+    brew|git|rg|fd|jq|unzip|codex|claude|gh|tmux|fzf|nvitop|rectangle|dia|vscode|wechat|hapigo|font-maple-mono-nf-cn|font-fira-code|appman|spacevim) ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unsupported tool: $tool" >&2; usage >&2; exit 1 ;;
   esac

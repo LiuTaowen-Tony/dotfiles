@@ -5,7 +5,7 @@ fixture="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-software.XXXXXX")"
 trap 'rm -rf "$fixture"' EXIT
 fixture="$(cd "$fixture" && pwd)"
 mkdir -p "$fixture/home" "$fixture/mock" "$fixture/real"
-for cmd in bash dirname mkdir ln cat chmod cp mktemp rm sed; do
+for cmd in bash dirname mkdir ln cat chmod cp mktemp rm sed find; do
   ln -s "$(command -v "$cmd")" "$fixture/mock/$cmd"
 done
 cat > "$fixture/mock/id" <<'SCRIPT'
@@ -34,6 +34,11 @@ echo 'installation log'
 cat >/dev/null
 [[ "${TEST_FAIL:-0}" == 0 ]] || exit 42
 [[ "${1:-}" != update ]] || exit 0
+if [[ "${0##*/}" == brew && "${*: -1}" == font-fira-code ]]; then
+  mkdir -p "$HOME/Library/Fonts"
+  echo font > "$HOME/Library/Fonts/FiraCode-Regular.ttf"
+  exit 0
+fi
 if [[ "${0##*/}" == python ]]; then TEST_REAL="$(dirname "$0")"; fi
 case "${*: -1}" in
   ripgrep) command_name=rg ;;
@@ -98,6 +103,60 @@ assert "$(cat "$TEST_LOG")" $'venv\npython -m pip install --upgrade nvitop' 'nvi
 : > "$TEST_LOG"
 run "$ROOT/bin/ensure" nvitop
 [[ ! -s "$TEST_LOG" ]] || { echo 'nvitop was reinstalled' >&2; exit 1; }
+
+# Fonts use macOS casks or checksum-verified Linux archives. A failed download
+# must leave installed fonts alone, and repeated runs must not download again.
+: > "$TEST_LOG"
+TEST_OS=Darwin run "$ROOT/bin/ensure" font-fira-code </dev/null 2>/dev/null
+assert "$(cat "$TEST_LOG")" 'brew install --cask font-fira-code' 'Mac font uses Homebrew cask'
+: > "$TEST_LOG"
+TEST_OS=Darwin run "$ROOT/bin/ensure" font-fira-code </dev/null
+[[ ! -s "$TEST_LOG" ]]
+cat > "$fixture/mock/curl" <<'SCRIPT'
+#!/usr/bin/env bash
+[[ "${TEST_DOWNLOAD_FAIL:-0}" == 0 ]] || exit 6
+echo download >> "$TEST_LOG"
+case "$*" in *MapleMono*) family=MapleMono-NF-CN ;; *) family=FiraCode ;; esac
+while [[ "$1" != -o ]]; do shift; done
+echo "$family" > "$2"
+SCRIPT
+cat > "$fixture/mock/sha256sum" <<'SCRIPT'
+#!/usr/bin/env bash
+if [[ "${TEST_BAD_HASH:-0}" == 1 ]]; then echo 'invalid hash'; exit 0; fi
+if [[ "$(cat "$1")" == MapleMono-NF-CN ]]; then
+  echo 'ab88522932cf4015dffeaef6dedc59a22a5fefecdcc6e583d9fcd997da5b7cac archive'
+else
+  echo '0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79 archive'
+fi
+SCRIPT
+cat > "$fixture/mock/unzip" <<'SCRIPT'
+#!/usr/bin/env bash
+echo unpack >> "$TEST_LOG"
+family="$(cat "$2")"
+mkdir -p "$4/ttf"
+echo font > "$4/ttf/$family-Regular.ttf"
+SCRIPT
+cat > "$fixture/mock/fc-cache" <<'SCRIPT'
+#!/usr/bin/env bash
+echo cache >> "$TEST_LOG"
+SCRIPT
+chmod +x "$fixture/mock/curl" "$fixture/mock/sha256sum" "$fixture/mock/unzip" "$fixture/mock/fc-cache"
+: > "$TEST_LOG"
+set +e
+TEST_BAD_HASH=1 XDG_DATA_HOME="$fixture/font data" run "$ROOT/bin/ensure" font-maple-mono-nf-cn 2>/dev/null
+font_exit=$?
+set -e
+[[ "$font_exit" != 0 && ! -d "$fixture/font data/fonts" ]]
+assert "$(cat "$TEST_LOG")" download 'bad checksums stop before archive extraction'
+: > "$TEST_LOG"
+XDG_DATA_HOME="$fixture/font data" run "$ROOT/bin/ensure" font-maple-mono-nf-cn font-fira-code 2>/dev/null
+[[ -s "$fixture/font data/fonts/font-maple-mono-nf-cn/MapleMono-NF-CN-Regular.ttf" ]]
+[[ -s "$fixture/font data/fonts/font-fira-code/FiraCode-Regular.ttf" ]]
+assert "$(cat "$TEST_LOG")" $'download\nunpack\ncache\ndownload\nunpack\ncache' 'Linux fonts use verified archives and refresh the cache'
+: > "$TEST_LOG"
+XDG_DATA_HOME="$fixture/font data" run "$ROOT/bin/ensure" font-maple-mono-nf-cn font-fira-code
+[[ ! -s "$TEST_LOG" ]]
+rm "$fixture/mock/curl" "$fixture/mock/sha256sum" "$fixture/mock/unzip" "$fixture/mock/fc-cache"
 
 # Root apt handles package/command name differences without accepting the launcher.
 rm "$fixture/mock/brew"
@@ -237,6 +296,7 @@ for attempt in 1 2; do
   HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" >/dev/null
 done
 assert "$(grep -c '^ensure git rg fd jq$' "$TEST_LOG")" 2 'default install ensures agent tools'
+assert "$(grep -c '^ensure font-maple-mono-nf-cn font-fira-code$' "$TEST_LOG")" 2 'default install ensures fonts on Linux too'
 assert "$(grep -c '^github-ssh$' "$TEST_LOG")" 2 'default install configures GitHub SSH'
 assert "$(grep -c '^clone$' "$TEST_LOG")" 2 'plugins cloned only once'
 : > "$TEST_LOG"
@@ -244,23 +304,23 @@ HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core
 assert "$(cat "$TEST_LOG")" deploy 'config-only does not install tools'
 : > "$TEST_LOG"
 HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-github-ssh >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure git rg fd jq' 'GitHub SSH can be skipped independently'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code' 'GitHub SSH can be skipped independently'
 : > "$TEST_LOG"
 HOME="$init_home" PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --github-ssh --config-only >/dev/null
 assert "$(cat "$TEST_LOG")" $'deploy\ngithub-ssh' 'explicit SSH setup works with config-only regardless of option order'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure rectangle dia vscode wechat hapigo\ngithub-ssh\nmacos' 'Mac install includes apps and preferences after SSH without closing apps'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\nensure rectangle dia vscode wechat hapigo\ngithub-ssh\nmacos' 'Mac install includes apps and preferences after SSH without closing apps'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --config-only >/dev/null
 assert "$(cat "$TEST_LOG")" deploy 'Mac config-only skips app downloads and system preferences'
 # Mac downloads and preference writes can be skipped independently.
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-mac-apps >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\ngithub-ssh\nmacos' 'skip Mac apps only'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\ngithub-ssh\nmacos' 'skip Mac apps only'
 : > "$TEST_LOG"
 HOME="$init_home" TEST_OS=Darwin PATH="$fixture/init-mock:$PATH" bash "$init_home/dotfiles/core/install.sh" --no-macos-settings >/dev/null
-assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure rectangle dia vscode wechat hapigo\ngithub-ssh' 'skip Mac preferences only'
+assert "$(cat "$TEST_LOG")" $'deploy\nensure brew\nensure git rg fd jq\nensure font-maple-mono-nf-cn font-fira-code\nensure rectangle dia vscode wechat hapigo\ngithub-ssh' 'skip Mac preferences only'
 
 # Run the real preferences script with only mocked defaults/uname available.
 # Unexpected privileged commands, process restarts, or indexing commands fail.

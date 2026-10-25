@@ -64,6 +64,7 @@ if [[ "$config_only" == 0 ]]; then
     "$ROOT/bin/ensure" brew
   fi
   "$ROOT/bin/ensure" git rg fd jq
+  "$ROOT/bin/ensure" font-maple-mono-nf-cn font-fira-code
   mkdir -p "$HOME/.zsh"
   for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
     if [[ ! -d "$HOME/.zsh/$plugin" ]]; then
