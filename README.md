@@ -4,6 +4,22 @@ These dotfiles separate upstream-managed behavior from fork-specific customizati
 
 ## Install
 
+On macOS or Linux with `curl`, Bash, and Git available:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/LiuTaowen-Tony/dotfiles/master/install.sh | bash
+```
+
+This downloads the repository to `~/dotfiles` and runs `core/install.sh`. An existing clean checkout on `master` is fast-forwarded from its `origin`; local changes or another branch are retained and used without updating. An unrelated existing directory is never overwritten. GitHub login and SSH passphrase prompts use the terminal. On a new Mac, install Command Line Tools with `xcode-select --install` first if Git is unavailable.
+
+Installer options pass through unchanged, for example:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/LiuTaowen-Tony/dotfiles/master/install.sh | bash -s -- --config-only
+```
+
+For your own fork, clone it directly:
+
 ```bash
 git clone https://github.com/your-name/dotfiles.git ~/dotfiles
 ~/dotfiles/core/install.sh
@@ -65,6 +81,7 @@ References: [AppMan](https://github.com/ivan-hc/AM#what-is-appman), [Claude Code
 
 ```text
 dotfiles/
+├── install.sh  # curl | bash entry point; delegates to core/install.sh
 ├── core/       # Install, update, refresh, and deploy; upstream-controlled
 ├── defaults/   # Default shell, Git, Vim, and SpaceVim configuration
 ├── bin/        # ensure and ordinary utility scripts

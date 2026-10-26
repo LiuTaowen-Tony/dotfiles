@@ -401,7 +401,7 @@ for script in "$ROOT"/core/*.sh "$ROOT"/bin/*; do
   [[ -f "$script" ]] || continue
   bash -n "$script"
 done
-bash -n "$ROOT/shellrc" "$ROOT/defaults/shellrc"
+bash -n "$ROOT/install.sh" "$ROOT/shellrc" "$ROOT/defaults/shellrc"
 if command -v zsh >/dev/null 2>&1; then
   zsh -n "$ROOT/shellrc" "$ROOT/defaults/shellrc"
 fi
@@ -421,5 +421,8 @@ pass 'shell syntax and whitespace checks pass'
 
 bash "$ROOT/tests/test_software.sh"
 pass 'software installation and lazy launchers preserve their contracts'
+
+bash "$ROOT/tests/test_remote_install.sh"
+pass 'curl entry point preserves local work and forwards installer options'
 
 printf '1..%d\n' "$pass_count"
